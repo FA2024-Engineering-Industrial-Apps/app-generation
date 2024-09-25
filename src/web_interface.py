@@ -1,13 +1,12 @@
+# %%
 import streamlit as st
 import requests
+import tempfile
+import subprocess
+from streamlit_ace import st_ace
 
 
-def beautify_prompt(prompt):
-    return (
-        f"### System:\n You are an AI assistant that generates fully functional Streamlit Python apps based on the user's request. When the user provides a description or requirements, output only the complete Python code for a Streamlit app that fulfills the request. Do not include any explanations, comments, or text outside the code. Output only the raw code without any code blocks or formatting.\n### User:\n{prompt}\n",
-    )
-
-
+# %%
 def get_response_from_siemens(api_key, prompt):
     url = "https://api.siemens.com/llm/v1/chat/completions"
     payload = {
@@ -42,6 +41,20 @@ def get_response_from_llama(prompt):
         print("Failed with status code:", response.status_code)
 
 
+def beautify_prompt(prompt):
+    return (
+        f"### System:\n You are an AI assistant that generates fully functional Streamlit Python apps based on the user's request. When the user provides a description or requirements, output only the complete Python code for a Streamlit app that fulfills the request. Do not include any explanations, comments, or text outside the code. Output only the raw code without any code blocks or formatting.\n### User:\n{prompt}\n",
+    )
+
+
+def run_code(code):
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py") as tmp_file:
+        tmp_file.write(code)
+        tmp_file_name = tmp_file.name
+    subprocess.run(["streamlit", "run", tmp_file_name])
+
+
+# %%
 st.title("Streamlit App Code Generator")
 # LLM Selection
 llm_options = ["Siemens LLM", "LLaMA 3"]
@@ -58,18 +71,33 @@ if llm_model == "Siemens LLM":
 # Prompt input
 prompt = st.text_area("Describe the Streamlit app you want to create:")
 
+if "code" not in st.session_state:
+    st.session_state.code = ""
+
 if st.button("Generate Code"):
     if prompt:
         prompt = beautify_prompt(prompt)[0]
         with st.spinner("Generating code..."):
             try:
                 if llm_model == "Siemens LLM":
-                    code = get_response_from_siemens(api_key, prompt)
+                    st.session_state.code = get_response_from_siemens(api_key, prompt)
                 elif llm_model == "LLaMA 3":
-                    code = get_response_from_llama(prompt)
-                st.subheader("Generated Streamlit App Code:")
-                st.code(code, language="python")
+                    st.session_state.code = get_response_from_llama(prompt)
+                # st.code(code, language="python")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
     else:
         st.warning("Please enter a prompt.")
+if st.session_state.code:
+    st.subheader("Generated Streamlit App Code:")
+    code = st_ace(
+        value=st.session_state.code,
+        language="python",
+        theme="monokai",
+        keybinding="vscode",
+        font_size=14,
+        tab_size=4,
+        height=200,
+    )
+    if st.button("Run Code"):
+        exec(code)
