@@ -25,10 +25,12 @@ def get_response_from_siemens(api_key, prompt):
         print("Failed with status code:", response.status_code)
 
 
-def get_response_from_llama(prompt):
+def get_response_from_workstation(prompt, model: str):
+    ''' model options: llama3.1 or gemma2
+    '''
     url = "http://workstation.ferienakademie.de:11434/api/generate"
     payload = {
-        "model": "llama3.1",
+        "model": model,
         "max_tokens": 18000,
         "prompt": prompt,
         "temperature": 0.6,
@@ -40,8 +42,17 @@ def get_response_from_llama(prompt):
     else:
         print("Failed with status code:", response.status_code)
 
+    
 
-def beautify_prompt(prompt):
+
+
+def requirement_prompt(prompt):
+    pass
+
+
+def beautify_prompt(prompt:str) -> str:
+    ''' Give context to the prompt
+    '''
     return (
         f"### System:\n You are an AI assistant that generates fully functional Streamlit Python apps based on the user's request. When the user provides a description or requirements, output only the complete Python code for a Streamlit app that fulfills the request. Do not include any explanations, comments, or text outside the code. Output only the raw code without any code blocks or formatting.\n### User:\n{prompt}\n",
     )
@@ -54,12 +65,16 @@ def run_code(code):
     subprocess.run(["streamlit", "run", tmp_file_name])
 
 
-# %%
-st.title("Streamlit App Code Generator")
+st.title("Industrial Edge Application Generator")
 # LLM Selection
-llm_options = ["Siemens LLM", "LLaMA 3"]
-llm_model = st.selectbox("Select LLM model", llm_options)
+st.markdown("Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you.")
+llm_options = ["Siemens LLM", "LLaMA 3", "Gemma2"]
 
+
+# Prompt input
+prompt = st.text_area("Describe the Industrial Edge App you want to create:")
+
+llm_model = st.radio("Select LLM model", llm_options)
 # API Key input for Siemens models
 if llm_model == "Siemens LLM":
     api_key = st.text_input("Enter your Siemens API key", type="password")
@@ -67,9 +82,6 @@ if llm_model == "Siemens LLM":
         api_key = api_key
     else:
         st.warning("Please enter your Siemens API key.")
-
-# Prompt input
-prompt = st.text_area("Describe the Streamlit app you want to create:")
 
 if "code" not in st.session_state:
     st.session_state.code = ""
@@ -82,14 +94,16 @@ if st.button("Generate Code"):
                 if llm_model == "Siemens LLM":
                     st.session_state.code = get_response_from_siemens(api_key, prompt)
                 elif llm_model == "LLaMA 3":
-                    st.session_state.code = get_response_from_llama(prompt)
+                    st.session_state.code = get_response_from_workstation(prompt, "llama3.1")
+                elif llm_model == "Gemma2":
+                    st.session_state.code = get_response_from_workstation(prompt, "gemma2:27b")
                 # st.code(code, language="python")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
     else:
         st.warning("Please enter a prompt.")
 if st.session_state.code:
-    st.subheader("Generated Streamlit App Code:")
+    st.subheader("Generated Industrial Edge App Code:")
     code = st_ace(
         value=st.session_state.code,
         language="python",
