@@ -3,10 +3,27 @@ import tempfile
 import sys
 import subprocess
 import streamlit as st
+from abc import ABC, abstractmethod
 from .llm_client import SiemensLLMClient, WorkstationLLMClient
 
 
-class AppGenerator:
+# Base class for LLM clients
+class AppGenerator(ABC):
+    @abstractmethod
+    def select_llm_client(self, llm_model, api_key):
+        pass
+
+    def generate_code(self, prompt):
+        pass
+
+    def run_code(self, code):
+        pass
+
+    def stop_code(self):
+        pass
+
+
+class StreamlitAppGenerator:
     def __init__(self):
         self.llm_client = None
         self.prompt = ""
