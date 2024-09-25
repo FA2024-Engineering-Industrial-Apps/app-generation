@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Count Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time Component Counts</h1>
+        <table id="component-table">
+            <thead>
+                <tr>
+                    <th>Component Type</th>
+                    <th>Current Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Transistors</td>
+                    <td id="transistor-count">Loading...</td>
+                </tr>
+                <tr>
+                    <td>Capacitors</td>
+                    <td id="capacitor-count">Loading...</td>
+                </tr>
+                <tr>
+                    <td>Resistors</td>
+                    <td id="resistor-count">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
