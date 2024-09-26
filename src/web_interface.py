@@ -31,6 +31,12 @@ if llm_model == "Siemens LLM":
         generator.select_llm_client(llm_model, api_key)
     else:
         st.warning("Please enter your Siemens API key.")
+elif llm_model == "FAPS LLM":
+    url = st.text_input("Enter the URL to the LLM", type="default")
+    if url:
+        generator.select_llm_client(llm_model, url)
+    else:
+        st.warning("Please enter the URL to the FAPS LLM.")
 else:
     generator.select_llm_client(llm_model)
 
