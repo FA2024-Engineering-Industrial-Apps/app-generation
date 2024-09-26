@@ -1,9 +1,9 @@
 import streamlit as st
 from streamlit_ace import st_ace
-from utils.app_generator import StreamlitAppGenerator, IEAppGenerator
-from utils.prompt import StreamlitAppPromptAdapter
+from generators.ieappgenerator import IEAppGenerator
+from generators.streamlitappgenerator import StreamlitAppGenerator
 
-generator = StreamlitAppGenerator()
+generator = IEAppGenerator()
 st.title("Industrial Edge Application Generator")
 
 # LLM Selection
