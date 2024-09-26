@@ -96,3 +96,19 @@ class StreamlitAppGenerator(AppGenerator):
             st.session_state.process.terminate()
             st.session_state.process = None
             st.success("App running stopped.")
+
+
+class IEAppGenerator(AppGenerator):
+    def __init__(self, llm_model="LLaMA-3-Latest", api_key=""):
+        super().__init__(llm_model, api_key)
+        self.prompt_adapter = IEAppPromptAdapter()
+        self.requirements = ""
+
+    def get_requirements(self):
+        self.requirements = self.llm_client.get_response(
+            self.prompt_adapter.requirement_prompt()
+        )
+
+    def run_pipeline(self, prompt):
+        self.prompt_adapter.update_user_prompt(prompt)
+        self.get_requirements()
