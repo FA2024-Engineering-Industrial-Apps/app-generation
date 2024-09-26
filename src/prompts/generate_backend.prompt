@@ -1,0 +1,42 @@
+You are a software developer writing a python backend. You will develop the backend based on a detailed backend architecture description.
+The endpoints of the RESTful API of the server are already defined. You will get the signatures of the methods that are called by the endpoints.
+Your task is to implement these function signatures in your backend so that they implement their functionality. The backend serves to interact with Industrial Edge machines through the MQTT data bus.
+The interaction with the machines is also defined in the backend architecture description. The interaction is achieved using an mqtt library.
+Import everything from this MQTT library that is stored in “mqtt_lib.py”. 
+
+Here are the signatures of this library:
+class MQTTClient:
+    """
+    Easy-to-use MQTT client for connecting to an MQTT broker and subscribing
+    to topics. Use the subscribe method to configure a callback event handler method
+    for receiving messages sent to the given topic.
+    """
+    def __init__(self, broker_address : str, broker_port : int, username : str, password : str, client_id: str = "MQTT_Client") -> None:
+        """
+        Constructs a new MQTTClient and starts the MQTT broker.
+
+        :param broker_address: Hostname or address of the MQTT broker.
+        :param broker_port: Port of the MQTT broker.
+        :param username: Broker username for authentication.
+        :param password: Broker password for authentication.
+        :param client_id: Client ID for the MQTT connection (default is "MQTT_Client").
+        """
+        
+    def subscribe(self, topic : str, callback : Callable[[mqtt.MQTTMessage], None]) -> None:
+        """ Subscribes to given topic, assigning a callback function that
+        handles the received MQTT message.
+
+        :param topic: String with the topic to subscribe
+        :param callback: Function to handle messages received on the topic. This function must accept
+                 one parameter (an `MQTTMessage` object) and return `None`.
+        """
+
+Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. For this, just add “import server” in the beginning.
+
+Here are the functions according to the endpoints:
+[%text%]
+
+Stay closely to the description of the architecture. Here is the backend architecture description:
+[%text%]
+
+Only output the code of the backend with no further recommendations.

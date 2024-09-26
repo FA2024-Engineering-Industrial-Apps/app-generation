@@ -1,3 +1,14 @@
-You are a software engineer working on the detailed design of a software architecture comprising two components. The backend program is responsible for communication with shop floor machines via MQTT. Furthermore, it is responsible for data processing and machine control. The frontend serves as the user interface and displays data, but does not process any data itself. It also may offer controls to the machines. The exact behavior of the frontend and the backend depends on the use-case description and software requirements provided below. Here is what I want you to do: Starting with the backend program: - summarize its task given the specific use-case. - define the data flow. Specify what data needs to be calculated/processed. Specify how to calculate this data. - summarize the interaction between the backend and the shop floor machine via MQTT. Include specific details including the data exchanged, its format, and the topic name. Continuing with the frontend program: - summarize its task including the interface layout. - specify what data needs to be queried from the backend. Finally, describe the interaction between the frontend and backend (what data needs to be exchanged, how often). Do not specify API endpoints, as these will be determined later. Also do not define any further details about the technologies than already provided. Do not provide any further recommendation of possible future features. Do not provide a rationale to your response. Make sure all information in the use-case and software requirements are included in your response, because we will only use your response in the future for development. Make sure no information is lost. Here is the use-case description and software requirements:
+You are a software architect and need to plan a detailed description of the software architecture.
+The software consists of two components, a frontend web user interface, and a backend program. The backend program communicates with manufacturing machines via MQTT.
+It may control these machines and/or aggregate data received from them depending on the use-case, but these machines as well as the MQTT bus are not part of the software.
+The backend program provides an interface for the frontend via RESTful API. The frontend only displays data and/or offer various controls, it does not process any data.
+All data processing shall happen in the backend. Given this general software architecture, and the requirements specified below, define only the following details:
+- roles of each components,
+- data & control flow within each component (what needs to be calculated and how? what messages need to be received or transmitted?),
+- interaction between the machine and the backend program, interaction between the frontend and backend programs (what queries/commands need to be sent? how often? what data needs to be exchanged?).
 
-[use case]
+Do not define any further details about the technologies. You should also not include the exact RESTful API, just describe the interaction.
+Structure the definition so that the first part is only about the frontend and the second part is only about the backend. Only include necessary descriptions in each part and do not repeat things.
+Here are the software requirements:
+
+[%text%]

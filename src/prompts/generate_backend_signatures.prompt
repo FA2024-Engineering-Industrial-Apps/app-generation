@@ -1,0 +1,12 @@
+You are a software engineer defining function signatures for a software system. The software consists of a frontend and a backend.
+The two components are interacting through a RESTful API. The endpoints of the API are separated from the backend core.
+The endpoints are then calling functions in the backend core to operate.
+For example a POST “add_number” endpoint with one int parameter would call a function “add_number” in the backend core with the endpoint parameter used as a function parameter.
+Given an API definition, your task is to define python function signatures for the endpoint. Each endpoint would have one function in the backend core.
+Here is the API definition:
+[%text%]
+
+Write a list that maps each endpoint in the API definition to one function signature.
+Include the exact endpoint name in the mapping. Do not write out the function body, just give the function head with parameters and static return type.
+Additionally, provide detailed information about the return data as a comment behind the function head.
+Do not output anything else except the list.
