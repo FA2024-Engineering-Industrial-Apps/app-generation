@@ -6,4 +6,5 @@ import streamlit as st
 def createTimer() -> None:
     """Creates a streamlit timer
     """
-    
+    pass
+

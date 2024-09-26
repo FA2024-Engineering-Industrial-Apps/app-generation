@@ -26,7 +26,7 @@ def get_response_from_siemens(api_key, prompt):
 
 
 def get_response_from_workstation(prompt, model: str):
-    ''' model options: llama3.1 or gemma2
+    ''' model options: llama3.1 or gemma2:27b or llama3.1:70b
     '''
     url = "http://workstation.ferienakademie.de:11434/api/generate"
     payload = {
