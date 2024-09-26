@@ -36,7 +36,6 @@ class SiemensLLMClient(LLMClient):
         else:
             raise Exception(f"Failed with status code: {response.status_code}")
 
-
 # Workstation LLM client
 class WorkstationLLMClient(LLMClient):
     def __init__(self, model_name):
@@ -49,6 +48,25 @@ class WorkstationLLMClient(LLMClient):
             "Qwen-2.5": "qwen2.5:32b",
         }
         self.model = self.available_models[model_name]
+
+    def get_response(self, prompt : str) -> str:
+        payload = {
+            "model": self.model,
+            "max_tokens": 18000,
+            "prompt": prompt,
+            "temperature": 0.6,
+            "stream": False,
+        }
+        response = requests.post(self.url, json=payload)
+        if response.status_code == 200:
+            return response.json()["response"]
+        else:
+            raise Exception(f"Failed with status code: {response.status_code}")
+
+class FAPSLLMClient(LLMClient):
+    def __init__(self):
+        self.model = "llama3.1:70b"
+        self.url = ""
 
     def get_response(self, prompt : str) -> str:
         payload = {
