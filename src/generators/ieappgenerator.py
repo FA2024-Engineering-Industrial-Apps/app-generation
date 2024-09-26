@@ -5,10 +5,11 @@ import os
 import traceback
 from . import config
 import shutil
+import logging
 
 class IEAppGenerator(AppGenerator):
-    def __init__(self, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
-        super().__init__(app_name, llm_model, api_key)
+    def __init__(self, logger : logging.Logger, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+        super().__init__(logger, app_name, llm_model, api_key)
         self.prompt_fetcher : PromptFetcher = PromptFetcher()
         self.artifacts : Dict[str,str] = dict()
     
@@ -108,6 +109,7 @@ class IEAppGenerator(AppGenerator):
         pass
 
     def run_pipeline(self, use_case_description):
+        self.logger.debug('Running IEAppGenerator pipeline...')
         self.artifacts.update({'use_case' : use_case_description})
         generation_tasks = {
             'a' : self._generate_only_frontend,
@@ -118,7 +120,8 @@ class IEAppGenerator(AppGenerator):
         try:
             generation_tasks[self.llm_client.get_response(self.prompt_fetcher.fetch('determine_necessary_components', use_case_description)).lower().strip()]()
         except KeyError as e:
-            print(f'The LLM has returned an invalid result.')
+            print(traceback.format_exc())
+            self.logger.error(f'The LLM has returned an invalid result.')
         except Exception:
             print(traceback.format_exc())
         finally:

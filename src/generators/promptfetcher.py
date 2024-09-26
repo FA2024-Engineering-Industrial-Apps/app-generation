@@ -1,7 +1,6 @@
 import os
 import re
 
-
 class PromptFetcher:
     def __init__(self, path: str = "prompts/", place_holder="[%text%]") -> None:
         self.read_prompts(path)
@@ -12,7 +11,7 @@ class PromptFetcher:
         for _, _, files_name in os.walk(path):
             for file in files_name:
                 with open(f"{path}/{file}", "r") as f:
-                    self.prompts_lib[os.path.splitext(file)[0]] = f.read()
+                    self.prompt_lib[os.path.splitext(file)[0]] = f.read()
 
     def fetch(self, prompt, *args) -> None:
         new_prompt = self.prompt_lib[prompt]
