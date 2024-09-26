@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 # Base class for LLM clients
 class LLMClient(ABC):
     @abstractmethod
-    def get_response(self, prompt):
+    def get_response(self, prompt : str) -> str:
         pass
 
 
@@ -20,7 +20,7 @@ class SiemensLLMClient(LLMClient):
             "Content-Type": "application/json",
         }
 
-    def get_response(self, prompt):
+    def get_response(self, prompt : str) -> str:
 
         payload = {
             "model": self.model,
@@ -50,7 +50,7 @@ class WorkstationLLMClient(LLMClient):
         }
         self.model = self.available_models[model_name]
 
-    def get_response(self, prompt):
+    def get_response(self, prompt : str) -> str:
         payload = {
             "model": self.model,
             "max_tokens": 18000,
