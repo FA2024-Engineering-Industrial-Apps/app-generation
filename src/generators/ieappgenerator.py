@@ -14,7 +14,7 @@ class IEAppGenerator(AppGenerator):
         self.artifacts : Dict[str,str] = dict()
     
     def _define_task_distribution(self) -> None:
-        architecture_description = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_task_distribution', self.artifacts['use_case']))
+        architecture_description = self.llm_client.get_response(self.prompt_fetcher.fetch('define_task_distribution', self.artifacts['use_case']))
         self.artifacts.update({'architecture_description' : architecture_description})
 
     def _define_restful_api(self) -> None:
