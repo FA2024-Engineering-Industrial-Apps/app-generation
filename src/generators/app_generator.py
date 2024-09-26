@@ -4,7 +4,7 @@ from .llm_client import SiemensLLMClient, WorkstationLLMClient
 # Base class for LLM clients
 class AppGenerator(ABC):
     @abstractmethod
-    def __init__(self, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+    def __init__(self, app_name : str = 'My_IE_App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
         self.prompt = ""
         self.app_name = app_name.strip()
         self.app_folder = self.app_name.replace(' ', '_').lower()

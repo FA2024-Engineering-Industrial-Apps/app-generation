@@ -24,14 +24,3 @@ def extract_imports_from_directory(directory):
                 file_path = os.path.join(root, file)
                 all_imports.update(extract_imports_from_file(file_path))
     return all_imports
-
-def write_requirements_txt(imports, output_file='requirements.txt'):
-    """Write the collected imports to a requirements.txt file."""
-    with open(output_file, 'w') as f:
-        for module in sorted(imports):
-            f.write(f"{module}\n")
-
-if __name__ == "__main__":
-    directory = "./"
-    imports = extract_imports_from_directory(directory)
-    write_requirements_txt(imports)

@@ -1,11 +1,14 @@
 from .app_generator import AppGenerator
 from .promptfetcher import PromptFetcher
+from .filecopier import FileCopier
+from .extractor import extract_imports_from_directory
 from typing import Dict
 
 class IEAppGenerator(AppGenerator):
     def __init__(self, llm_model="LLaMA-3-Latest", api_key=""):
         super().__init__(llm_model, api_key)
         self.prompt_fetcher : PromptFetcher = PromptFetcher()
+        self.file_copier : FileCopier = FileCopier()
         self.artifacts : Dict[str,str] = dict()
     
     def _define_task_distribution(self) -> None:
@@ -51,15 +54,25 @@ class IEAppGenerator(AppGenerator):
         pass
 
     def _package_dockerfile(self) -> None:
-        # Todo implement dockerfile packaging
+        dst_file = self.app_folder + "/program/Dockerfile"
+        self.file_copier.copy_and_insert('Dockerfile', dst_file, {})
         pass
 
     def _generate_requirements(self) -> None:
-        # Todo implement dockerfile generation
+        backend_dir = self.app_folder + "/program/src/"
+        imports = extract_imports_from_directory(backend_dir)
+        import_list = ""
+        for module in sorted(imports):
+            imports_str += f"{module}\n"
+        self.artifacts.update({'import_list' : import_list})
+        package_list = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_requirements', self.artifacts['import_list']))
+        dst_file = self.app_folder + "/program/Dockerfile"
+        self.file_copier.copy_and_insert('requirements.txt', dst_file, {'package_list' : package_list})
         pass
 
     def _configure_docker_compose_file(self) -> None:
-        # Todo implement docker compose generation
+        dst_file = self.app_folder + "/docker_compose.yml"
+        self.file_copier.copy_and_insert('docker-compose.yml', dst_file, {'image_name' : self.app_name})
         pass
     
     def _generate_frontend_and_backend(self) -> None:

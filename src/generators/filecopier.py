@@ -1,7 +1,7 @@
 import os
 
 class FileCopier:
-    def __init__(self, src_folder: str = "templates/"):
+    def __init__(self, src_folder: str = "template_files/"):
         """
         Initialize the FileCopier class with the folder where source files are located.
 
