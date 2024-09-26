@@ -1,8 +1,12 @@
 import streamlit as st
 from generators.ieappgenerator import IEAppGenerator
 from generators.streamlitappgenerator import StreamlitAppGenerator
+import logging
 
-generator = IEAppGenerator()
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG)
+
+generator = IEAppGenerator(logger)
 st.title("Industrial Edge Application Generator")
 
 # LLM Selection
