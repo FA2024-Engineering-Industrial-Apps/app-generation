@@ -5,28 +5,15 @@ import subprocess
 import streamlit as st
 from abc import ABC, abstractmethod
 from .llm_client import SiemensLLMClient, WorkstationLLMClient
+from .prompt import StreamlitAppPromptAdapter, IEAppPromptAdapter
 
 
 # Base class for LLM clients
 class AppGenerator(ABC):
     @abstractmethod
-    def select_llm_client(self, llm_model, api_key):
-        pass
-
-    def generate_code(self, prompt):
-        pass
-
-    def run_code(self, code):
-        pass
-
-    def stop_code(self):
-        pass
-
-
-class StreamlitAppGenerator:
-    def __init__(self):
-        self.llm_client = None
+    def __init__(self, llm_model="LLaMA-3-Latest", api_key=""):
         self.prompt = ""
+        self.select_llm_client(llm_model, api_key)
 
     def select_llm_client(self, llm_model, api_key=""):
         """Select the appropriate LLM client based on user choice."""
@@ -39,11 +26,33 @@ class StreamlitAppGenerator:
         else:
             self.llm_client = WorkstationLLMClient(llm_model)
 
-    def generate_code(self, prompt):
-        """Generate code using the selected LLM client."""
-        return self.llm_client.get_response(prompt)
+    def get_requirements(self, prompt):
+        pass
 
-    def run_code(self, code: str, port=8052):
+    def run_pipeline(self, prompt):
+        pass
+
+    def preview(self, code):
+        pass
+
+    def deploy(self, code):
+        pass
+
+    def stop(self):
+        pass
+
+
+class StreamlitAppGenerator(AppGenerator):
+    def __init__(self, llm_model="LLaMA-3-Latest", api_key=""):
+        super().__init__(llm_model, api_key)
+        self.prompt_adapter = StreamlitAppPromptAdapter()
+
+    def run_pipeline(self, prompt):
+        """Generate code using the selected LLM client."""
+        self.prompt_adapter.update_user_prompt(prompt)
+        return self.llm_client.get_response(self.prompt_adapter.app_prompt())
+
+    def deploy(self, code: str, port=8052):
         if st.session_state.process:
             st.session_state.process.terminate()
             st.session_state.process = None
@@ -82,7 +91,7 @@ class StreamlitAppGenerator:
             unsafe_allow_html=True,
         )
 
-    def stop_code(self):
+    def stop(self):
         if st.session_state.process:
             st.session_state.process.terminate()
             st.session_state.process = None
