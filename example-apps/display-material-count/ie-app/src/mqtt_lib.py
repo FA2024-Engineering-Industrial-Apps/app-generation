@@ -38,6 +38,16 @@ class MQTTClient:
         """
         self._topic_callback.update({topic:callback})
         self._client.subscribe(topic)
+
+    def publish(self, topic : str, payload : str, qos : int = 0, retain : bool = False) -> None:
+        """ Publishes a message to the given topic.
+
+        :param topic: String with the topic to publish
+        :param payload: String with the message to publish
+        :param qos: Quality of Service level (default is 0)
+        :param retain: Retain flag (default is False)
+        """
+        self._client.publish(topic, payload, qos, retain)
         
     def _start_mqtt_broker(self, broker_address: str, broker_port: int, username: str, password: str) -> None:
         try:
