@@ -44,7 +44,7 @@ class MQTTClient:
             self._client.username_pw_set(username, password)
             self._client.connect(broker_address, broker_port)
             self._client.loop_start()
-        except (OSError, mqtt.MQTTException) as e:
+        except Exception as e:
             self._logger.error(str(e))
         
     def _on_connect(self, _client: mqtt.Client, userdata: Any, flags: dict, rc: int) -> None:
