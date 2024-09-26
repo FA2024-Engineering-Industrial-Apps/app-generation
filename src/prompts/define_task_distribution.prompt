@@ -8,7 +8,7 @@ All data processing shall happen in the backend. Given this general software arc
 - interaction between the machine and the backend program, interaction between the frontend and backend programs (what queries/commands need to be sent? how often? what data needs to be exchanged?).
 
 Do not define any further details about the technologies. You should also not include the exact RESTful API, just describe the interaction.
-Structure the definition so that the first part is only about the frontend and the second part is only about the backend. Only include necessary descriptions in each part and do not repeat things.
+Structure the definition so that the first part is only about the frontend and the second part is only about the backend. Separate the two sections with the following character sequence: '<<++>>'. Only include necessary descriptions in each part and do not repeat things.
 Here are the software requirements:
 
 [%text%]

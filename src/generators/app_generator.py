@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .llm_client import SiemensLLMClient, WorkstationLLMClient
+from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient
 
 # Base class for LLM clients
 class AppGenerator(ABC):
@@ -18,6 +18,8 @@ class AppGenerator(ABC):
                 self.llm_client = SiemensLLMClient(api_key)
             else:
                 raise Exception("No API Key.")
+        elif llm_model == "FAPS LLM":
+            self.llm_client = FAPSLLMClient()
         else:
             self.llm_client = WorkstationLLMClient(llm_model)
 

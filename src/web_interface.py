@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_ace import st_ace
 from generators.ieappgenerator import IEAppGenerator
 from generators.streamlitappgenerator import StreamlitAppGenerator
 
@@ -11,12 +10,13 @@ st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
 llm_options = [
+    "FAPS LLM",
     "Siemens LLM",
     "Gemma-2",
     "LLaMA-3-70B",
     "LLaMA-3-Latest",
     "LlaMa-3-Groq-Tool-Use",
-    "Qwen-2.5",
+    "Qwen-2.5"
 ]
 llm_model = st.radio("Select LLM model", llm_options, horizontal=True)
 

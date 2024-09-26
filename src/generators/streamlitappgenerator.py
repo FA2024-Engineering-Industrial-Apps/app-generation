@@ -6,8 +6,8 @@ import subprocess
 from .promptadapter import StreamlitAppPromptAdapter
 
 class StreamlitAppGenerator(AppGenerator):
-    def __init__(self, llm_model="LLaMA-3-Latest", api_key=""):
-        super().__init__(llm_model, api_key)
+    def __init__(self, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+        super().__init__(app_name, llm_model, api_key)
         self.prompt_adapter = StreamlitAppPromptAdapter()
 
     def run_pipeline(self, prompt):
