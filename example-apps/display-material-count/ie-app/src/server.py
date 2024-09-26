@@ -12,4 +12,4 @@ def components():
     return jsonify(get_current_component_counts())
 
 def run_server():
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
