@@ -1,11 +1,15 @@
-from flask import Flask, jsonify
-from backend import get_component_counts
+from flask import Flask, jsonify, render_template
+from backend import get_current_component_counts
 
 app = Flask(__name__)
 
-@app.route('/api/v1/component-counts', methods=['GET'])
-def component_counts():
-    return jsonify(get_component_counts())
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/components', methods=['GET'])
+def components():
+    return jsonify(get_current_component_counts())
 
 def run_server():
     app.run()

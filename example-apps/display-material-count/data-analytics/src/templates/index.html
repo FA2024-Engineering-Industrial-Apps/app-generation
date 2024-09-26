@@ -3,35 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Component Count Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Real-Time Component Counts</h1>
-        <table id="component-table">
+        <h1>Real-Time Component Count</h1>
+        <table id="componentTable">
             <thead>
                 <tr>
-                    <th>Component Type</th>
-                    <th>Current Count</th>
+                    <th>Component</th>
+                    <th>Count</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>Transistors</td>
-                    <td id="transistor-count">Loading...</td>
+                    <td id="transistorCount">Loading...</td>
                 </tr>
                 <tr>
                     <td>Capacitors</td>
-                    <td id="capacitor-count">Loading...</td>
+                    <td id="capacitorCount">Loading...</td>
                 </tr>
                 <tr>
                     <td>Resistors</td>
-                    <td id="resistor-count">Loading...</td>
+                    <td id="resistorCount">Loading...</td>
                 </tr>
             </tbody>
         </table>
     </div>
-    <script src="script.js"></script>
+    <script src="/static/script.js"></script>
 </body>
 </html>
