@@ -21,7 +21,11 @@ class AppGenerator(ABC):
             else:
                 raise Exception("No API Key.")
         elif llm_model == "FAPS LLM":
-            self.llm_client = FAPSLLMClient(self.logger)
+            url = api_key
+            if url:
+                self.llm_client = FAPSLLMClient(self.logger, url)
+            else:
+                raise Exception("No URL provided.")
         else:
             self.llm_client = WorkstationLLMClient(self.logger, llm_model)
 

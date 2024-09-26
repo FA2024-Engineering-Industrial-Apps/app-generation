@@ -72,10 +72,10 @@ class WorkstationLLMClient(LLMClient):
             raise Exception(f"Failed with status code: {response.status_code}")
 
 class FAPSLLMClient(LLMClient):
-    def __init__(self, logger : logging.Logger):
+    def __init__(self, logger : logging.Logger, url : str):
         self.logger = logger
         self.model = "llama3.1:70b"
-        self.url = "https://hub.nhr.fau.de/ollama/0ceb1621bc7d26892bb8c27fb31ecd6b"
+        self.url = url
 
     def get_response(self, prompt : str) -> str:
         payload = {
