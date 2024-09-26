@@ -31,6 +31,15 @@ class MQTTClient:
                  one parameter (an `MQTTMessage` object) and return `None`.
         """
 
+    def publish(self, topic : str, payload : str, qos : int = 0, retain : bool = False) -> None:
+        """ Publishes a message to the given topic.
+
+        :param topic: String with the topic to publish
+        :param payload: String with the message to publish
+        :param qos: Quality of Service level (default is 0)
+        :param retain: Retain flag (default is False)
+        """
+
 Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. For this, just add “import server” in the beginning.
 
 Here are the functions according to the endpoints:
