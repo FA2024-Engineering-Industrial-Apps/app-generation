@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from .llm_client import SiemensLLMClient, WorkstationLLMClient
+from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient
+from logging import Logger
 
 # Base class for LLM clients
 class AppGenerator(ABC):
     @abstractmethod
-    def __init__(self, app_name : str = 'My_IE_App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+    def __init__(self, logger : Logger, app_name : str = 'My_IE_App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+        self.logger = logger
         self.prompt = ""
         self.app_name = app_name.strip()
         self.app_folder = self.app_name.replace(' ', '_').lower()
@@ -15,11 +17,17 @@ class AppGenerator(ABC):
         if llm_model == "Siemens LLM":
             if api_key:
                 api_key = api_key
-                self.llm_client = SiemensLLMClient(api_key)
+                self.llm_client = SiemensLLMClient(self.logger, api_key)
             else:
                 raise Exception("No API Key.")
+        elif llm_model == "FAPS LLM":
+            url = api_key
+            if url:
+                self.llm_client = FAPSLLMClient(self.logger, url)
+            else:
+                raise Exception("No URL provided.")
         else:
-            self.llm_client = WorkstationLLMClient(llm_model)
+            self.llm_client = WorkstationLLMClient(self.logger, llm_model)
 
     def get_requirements(self, prompt):
         pass
