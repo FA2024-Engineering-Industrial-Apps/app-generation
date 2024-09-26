@@ -3,7 +3,7 @@ You will develop the server based on the definition of the RESTful API and a map
 The server should only provide the endpoints. Include the data that is received by the endpoint (if any) in the parameters.
 The server should only call the according function from the mapping while passing the parameters. It should not compute anything else or change the parameters in any way, just the function call.
 At the start of the file, the server should import every function from “backend.py”. All functions that are called by the endpoints are in this backend file.
-The server should not start by itself but should provide a corresponding function “run_server” which starts the server.
+The server should not start by itself but should provide a corresponding function “run_server” which starts the server on host “0.0.0.0” and port “5000”.
 Also add “index.html” as a render template for the base route (“/”) of the server.
 Here is the API definition:
 [%text%]
