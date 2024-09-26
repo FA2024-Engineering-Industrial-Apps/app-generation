@@ -50,12 +50,12 @@ class IEAppGenerator(AppGenerator):
         # Todo implement backend app packaging
         pass
 
-    def _generate_dockerfile(self) -> None:
-        # Todo implement dockerfile generation
-        pass
-
     def _package_dockerfile(self) -> None:
         # Todo implement dockerfile packaging
+        pass
+
+    def _generate_requirements(self) -> None:
+        # Todo implement dockerfile generation
         pass
 
     def _configure_docker_compose_file(self) -> None:
@@ -72,7 +72,9 @@ class IEAppGenerator(AppGenerator):
         self._generate_backend_app()
         self._package_backend_application()
         
-        self._generate_web_interface()
+        self._package_dockerfile()
+        self._generate_requirements()
+        self._configure_docker_compose_file()
     
     def _generate_only_frontend(self) -> None:
         pass
