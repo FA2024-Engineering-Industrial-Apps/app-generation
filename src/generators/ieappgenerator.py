@@ -17,8 +17,15 @@ class IEAppGenerator(AppGenerator):
         self.artifacts.update({'restful_api_definition'})
 
     def _generate_web_interface(self) -> None:
-        web_interface_combined = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_web_interface_fb', self.artifacts['frontend_architecture_description'], self.artifacts['restful_api_definition']))
-        # Todo implement splitting of web interface into separate files and save to file system
+        web_interface_files = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_web_interface_fb', self.artifacts['frontend_architecture_description'], self.artifacts['restful_api_definition'])).split(FRONTEND_FILE_SEPARATOR_STRING)
+        if len(web_interface_files) == 3:
+            index_html_text = web_interface_files[0]
+            styles_css_text = web_interface_files[1]
+            script_js_text = web_interface_files[2]
+            
+            
+        else:
+            raise Exception('The LLM failed to generate the frontend web interface files.')
 
     def _split_architecture_description(self) -> None:
         # Todo implement splitting of architecture description

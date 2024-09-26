@@ -1,0 +1,5 @@
+You get a list of requirements for a python environment. These requirements are collected by searching the import of python scripts.
+Convert the list so that each entry can be installed using pip. Only output packages that are not in the standard python library.
+Just output the updated list as text and no more output.
+Here is the list:
+[%text%]

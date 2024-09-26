@@ -1,0 +1,2 @@
+FRONTEND_FILE_SEPARATOR_STRING : str = '<<++>>'
+DESTINATION_FOLDER : str = 'dist'
