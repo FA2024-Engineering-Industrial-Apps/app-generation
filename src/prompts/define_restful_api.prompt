@@ -1,2 +1,13 @@
-You are a software engineer defining the RESTful API of our backend program. The RESTful API will be served by the same server hosting the frontend website. Set the base URL accordingly to “/”. Define the API in normal text for human interpretation based on the description of the frontend and backend including their interaction below. Provide only the following information regarding the API: 1. General Information: name, and authentication type. 2. Endpoint Information: for each endpoint: HTTP method, path, request structure, endpoint description, headers, expected response, data format, and potential error responses. Only provide the description of the API as specified above. Do not add additional information, or recommendations. The description of the application:
-[architecture description]
+You are a software engineer defining the RESTful API of our backend program.
+The RESTful API will be served by the same server hosting the frontend website. Set the base URL accordingly to “/”.
+Define the API in normal text for human interpretation based on the description of the frontend and backend including their interaction below.
+
+Provide only the following information regarding the API:
+1. General Information: name, and authentication type.
+2. Endpoint Information: for each endpoint: HTTP method, path, request structure, endpoint description, headers, expected response, data format, and potential error responses.
+
+Only provide the description of the API as specified above.
+Do not add additional information, or recommendations.
+
+The description of the application:
+[%text%]

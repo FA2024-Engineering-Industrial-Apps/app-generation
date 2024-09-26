@@ -1,0 +1,2 @@
+class PromptFetcher:
+    pass
