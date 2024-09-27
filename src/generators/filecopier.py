@@ -33,6 +33,7 @@ class FileCopier:
             with open(dest_file, 'w') as f:
                 f.write(content)
 
+        # TODO : change printing to logging
         except FileNotFoundError:
             print(f"Error: The file '{src_file}' was not found in the folder '{self.src_folder}'.")
         except Exception as e:

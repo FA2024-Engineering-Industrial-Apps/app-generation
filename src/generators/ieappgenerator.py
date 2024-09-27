@@ -61,16 +61,14 @@ class IEAppGenerator(AppGenerator):
         with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'], 'backend.py'), 'w') as file:
             file.write(backend_app_code)
 
-    def _package_backend_application(self) -> None:
-        # Todo implement backend app packaging
-        pass
-
     def _package_dockerfile(self) -> None:
+        # TODO : adapt path
         dst_file = self.app_folder + "/program/Dockerfile"
         self.file_copier.copy_and_insert('Dockerfile', dst_file, {})
         pass
 
     def _generate_requirements(self) -> None:
+        # TODO : adapt path
         backend_dir = self.app_folder + "/program/src/"
         imports = extract_imports_from_directory(backend_dir)
         import_list = ""
@@ -83,6 +81,7 @@ class IEAppGenerator(AppGenerator):
         pass
 
     def _configure_docker_compose_file(self) -> None:
+        # TODO : adapt path
         dst_file = self.app_folder + "/docker_compose.yml"
         self.file_copier.copy_and_insert('docker-compose.yml', dst_file, {'image_name' : self.app_name})
         pass
@@ -107,7 +106,6 @@ class IEAppGenerator(AppGenerator):
         self._generate_backend_http_server()
         self._generate_web_interface()
         self._generate_backend_app()
-        self._package_backend_application()
         
         self._package_dockerfile()
         self._generate_requirements()
