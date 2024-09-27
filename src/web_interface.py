@@ -23,7 +23,6 @@ llm_options = [
     "LLaMA-3-Latest",
     "LlaMa-3-Groq-Tool-Use",
     "Qwen-2.5"
-    "Qwen-2.5"
 ]
 llm_model = st.radio("Select LLM model", llm_options, horizontal=True)
 
