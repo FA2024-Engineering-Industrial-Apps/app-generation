@@ -4,7 +4,7 @@ from generators.streamlitappgenerator import StreamlitAppGenerator
 import logging
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 generator = IEAppGenerator(logger)
 st.title("Industrial Edge Application Generator")
