@@ -2,7 +2,7 @@ You are a software developer writing a python backend. You will develop the back
 The endpoints of the RESTful API of the server are already defined. You will get the signatures of the methods that are called by the endpoints.
 Your task is to implement these function signatures in your backend so that they implement their functionality. The backend serves to interact with Industrial Edge machines through the MQTT data bus.
 The interaction with the machines is also defined in the backend architecture description. The interaction is achieved using an mqtt library.
-Import everything from this MQTT library that is stored in “mqtt_lib.py”. 
+Import everything from this MQTT library that is stored in “mqtt_lib.py”. Make sure to import MQTTMessage from paho.mqtt.client for use in the callback function.
 
 Here are the signatures of this library:
 class MQTTClient:
@@ -22,7 +22,7 @@ class MQTTClient:
         :param client_id: Client ID for the MQTT connection (default is "MQTT_Client").
         """
         
-    def subscribe(self, topic : str, callback : Callable[[mqtt.MQTTMessage], None]) -> None:
+    def subscribe(self, topic : str, callback : Callable[[MQTTMessage], None]) -> None:
         """ Subscribes to given topic, assigning a callback function that
         handles the received MQTT message.
 
@@ -40,7 +40,9 @@ class MQTTClient:
         :param retain: Retain flag (default is False)
         """
 
-Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. For this, just add “import server” in the beginning.
+Make sure to import MQTTMessage from paho.mqtt.client. This should be the only item you import from the paho library.
+
+Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. This run_server method does not have any parameters. For this, just add “import server” in the beginning.
 
 Here are the functions according to the endpoints:
 [%text%]
