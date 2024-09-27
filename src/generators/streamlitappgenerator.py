@@ -12,7 +12,7 @@ class StreamlitAppGenerator(AppGenerator):
     def __init__(
         self,
         logger: logging.Logger,
-        app_name: str = "My IE App",
+        app_name: str = "My_IE_App",
         llm_model: str = "LLaMA-3-Latest",
         api_key: str = "",
     ):

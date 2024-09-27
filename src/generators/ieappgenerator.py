@@ -46,7 +46,9 @@ class IEAppGenerator(AppGenerator):
                 self.artifacts["frontend_architecture_description"],
                 self.artifacts["restful_api_definition"],
             )
-        ).split(config.FRONTEND_FILE_SEPARATOR_STRING)
+        )
+        self.artifacts.update({"web_interface_files": web_interface_files})
+        web_interface_files = web_interface_files.split(config.FRONTEND_FILE_SEPARATOR_STRING)
         if len(web_interface_files) >= 3:
             index_html_text = extract_code(web_interface_files[0], "html")
             styles_css_text = extract_code(web_interface_files[1], "css")
@@ -159,6 +161,7 @@ class IEAppGenerator(AppGenerator):
             os.path.join(
                 self.app_root_path,
                 config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
+                "mqtt_lib.py"
             ),
         )
 
@@ -188,7 +191,7 @@ class IEAppGenerator(AppGenerator):
         dst_file = os.path.join(
             self.app_root_path,
             config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["root"],
-            "Dockerfile",
+            "requirements.txt",
         )
         self.file_copier.copy_and_insert(
             "requirements.txt", dst_file, {"package_list": package_list}

@@ -1,7 +1,7 @@
 import os
 
 class FileCopier:
-    def __init__(self, src_folder: str = "template_files/"):
+    def __init__(self, src_folder: str = "/template_files/"):
         """
         Initialize the FileCopier class with the folder where source files are located.
 
@@ -33,8 +33,12 @@ class FileCopier:
             with open(dest_file, 'w') as f:
                 f.write(content)
 
-        # TODO : change printing to logging
         except FileNotFoundError:
             print(f"Error: The file '{src_file}' was not found in the folder '{self.src_folder}'.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    # Example usage
+    copier = FileCopier()
+    copier.copy_and_insert("Dockerfile", "output.txt", {})
