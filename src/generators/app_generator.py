@@ -7,7 +7,7 @@ import os
 # Base class for LLM clients
 class AppGenerator(ABC):
     @abstractmethod
-    def __init__(self, logger : Logger, app_name : str = 'My_IE_App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+    def __init__(self, logger : Logger, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
         self.logger = logger
         self.prompt = ""
         self.app_name = app_name.strip()

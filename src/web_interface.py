@@ -10,6 +10,7 @@ if os.path.exists('web_interface.log'):
 logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 generator = IEAppGenerator(logger)
+generator = IEAppGenerator(logger)
 st.title("Industrial Edge Application Generator")
 
 # LLM Selection
@@ -18,11 +19,13 @@ st.markdown(
 )
 llm_options = [
     "FAPS LLM",
+    "FAPS LLM",
     "Siemens LLM",
     "Gemma-2",
     "LLaMA-3-70B",
     "LLaMA-3-Latest",
     "LlaMa-3-Groq-Tool-Use",
+    "Qwen-2.5"
     "Qwen-2.5"
 ]
 llm_model = st.radio("Select LLM model", llm_options, horizontal=True)
@@ -34,6 +37,12 @@ if llm_model == "Siemens LLM":
         generator.select_llm_client(llm_model, api_key)
     else:
         st.warning("Please enter your Siemens API key.")
+elif llm_model == "FAPS LLM":
+    url = st.text_input("Enter the URL to the LLM", type="default")
+    if url:
+        generator.select_llm_client(llm_model, url)
+    else:
+        st.warning("Please enter the URL to the FAPS LLM.")
 elif llm_model == "FAPS LLM":
     url = st.text_input("Enter the URL to the LLM", type="default")
     if url:
