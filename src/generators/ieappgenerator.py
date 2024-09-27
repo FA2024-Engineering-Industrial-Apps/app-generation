@@ -16,9 +16,8 @@ class IEAppGenerator(AppGenerator):
         logger: logging.Logger,
         app_name: str = "My IE App",
         llm_model: str = "LLaMA-3-Latest",
-        api_key: str = "",
     ):
-        super().__init__(logger, app_name, llm_model, api_key)
+        super().__init__(logger, app_name, llm_model)
         self.prompt_fetcher: PromptFetcher = PromptFetcher()
         self.file_copier: FileCopier = FileCopier(config.TEMPLATE_FILES_DIR)
         self.artifacts: Dict[str, str] = dict()

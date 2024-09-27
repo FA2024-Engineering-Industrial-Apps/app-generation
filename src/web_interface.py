@@ -2,13 +2,12 @@ import streamlit as st
 import streamlit.components.v1 as compenents
 from generators.ieappgenerator import IEAppGenerator
 
-import os
 import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     filename="web_interface.log",
-    filemode='w',
+    filemode="w",
     encoding="utf-8",
     level=logging.DEBUG,
     format="[%(asctime)s][%(levelname)s] %(message)s",
@@ -30,32 +29,32 @@ source_options = ["FAPS LLM", "Workstation LLM", "Siemens LLM", "ChatGPT"]
 source = st.radio("Select LLM source", source_options, horizontal=True)
 
 # Select model
-if source == "Siemens LLM":
-    api_key = st.text_input("Enter your Siemens API key", type="password")
-    if api_key:
-        generator.select_llm_client(source, api_key)
-    else:
-        st.warning("Please enter your Siemens API key.")
-elif source == "FAPS LLM":
-    url = st.text_input("Enter the URL to the LLM", type="default")
-    if url:
-        generator.select_llm_client(source, url)
-    else:
-        st.warning("Please enter the URL to the FAPS LLM.")
-elif source == "ChatGPT":
-    api_key = st.text_input("Enter your ChatGPT API key", type="password")
-    if api_key:
-        generator.select_llm_client(source, api_key)
-    else:
-        st.warning("Please enter your ChatGPT API key.")
-else:
-    generator.select_llm_client(source)
-
+generator.select_llm_client(source)
 model_name = st.selectbox(
     "Please choose an LLM Model",
     list(generator.llm_client.available_models.keys()),
 )
 generator.llm_client.select_model(model_name)
+
+# Input API Key
+if source == "Siemens LLM":
+    api_key = st.text_input("Enter your Siemens API key", type="password")
+    if api_key:
+        generator.llm_client.set_api_key(api_key)
+    else:
+        st.warning("Please enter your Siemens API key.")
+elif source == "FAPS LLM":
+    url = st.text_input("Enter the URL to the LLM", type="default")
+    if url:
+        generator.llm_client.set_api_key(url)
+    else:
+        st.warning("Please enter the URL to the FAPS LLM.")
+elif source == "ChatGPT":
+    api_key = st.text_input("Enter your ChatGPT API key", type="password")
+    if api_key:
+        generator.llm_client.set_api_key(api_key)
+    else:
+        st.warning("Please enter your ChatGPT API key.")
 
 # Prompt input
 prompt = st.text_area("Describe the Industrial Edge App you want to create:")
@@ -78,9 +77,6 @@ if st.button("Generate Code"):
 st.divider()
 
 
-
-
 if st.button("After app is generated"):
     compenents.iframe("http://localhost:8080", height=800)
     # os.system("python3 -m ~/dist/my_ie_app/program/src/server.py")
-
