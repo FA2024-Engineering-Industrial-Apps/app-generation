@@ -1,17 +1,19 @@
 import requests
 from abc import ABC, abstractmethod
 import logging
+import openai
+
 
 # Base class for LLM clients
 class LLMClient(ABC):
     @abstractmethod
-    def get_response(self, prompt : str) -> str:
+    def get_response(self, prompt: str) -> str:
         pass
 
 
 # Siemens LLM client
 class SiemensLLMClient(LLMClient):
-    def __init__(self, logger : logging.Logger, api_key):
+    def __init__(self, logger: logging.Logger, api_key):
         self.logger = logger
         self.api_key = api_key
         self.model = "mistral-7b-instruct"
@@ -21,7 +23,7 @@ class SiemensLLMClient(LLMClient):
             "Content-Type": "application/json",
         }
 
-    def get_response(self, prompt : str) -> str:
+    def get_response(self, prompt: str) -> str:
 
         payload = {
             "model": self.model,
@@ -40,9 +42,10 @@ class SiemensLLMClient(LLMClient):
         else:
             raise Exception(f"Failed with status code: {response.status_code}")
 
+
 # Workstation LLM client
 class WorkstationLLMClient(LLMClient):
-    def __init__(self, logger : logging.Logger, model_name):
+    def __init__(self, logger: logging.Logger, model_name):
         self.logger = logger
         self.url = "http://workstation.ferienakademie.de:11434/api/generate"
         self.available_models = {
@@ -54,7 +57,7 @@ class WorkstationLLMClient(LLMClient):
         }
         self.model = self.available_models[model_name]
 
-    def get_response(self, prompt : str) -> str:
+    def get_response(self, prompt: str) -> str:
         payload = {
             "model": self.model,
             "max_tokens": 18000,
@@ -71,25 +74,53 @@ class WorkstationLLMClient(LLMClient):
         else:
             raise Exception(f"Failed with status code: {response.status_code}")
 
+
 class FAPSLLMClient(LLMClient):
-    def __init__(self, logger : logging.Logger, url : str):
+    def __init__(self, logger: logging.Logger, url: str):
         self.logger = logger
         self.model = "llama3.1:70b"
         self.url = url
 
-    def get_response(self, prompt : str) -> str:
+    def get_response(self, prompt: str) -> str:
         payload = {
             "model": self.model,
             "prompt": prompt,
-            "options" : {
-                "temperature": 0.6
-            },
+            "options": {"temperature": 0.6},
             "stream": False,
         }
         self.logger.debug(f'Prompting LLM with "{prompt}"')
-        response = requests.post(self.url + '/api/generate', json=payload)
+        response = requests.post(self.url + "/api/generate", json=payload)
         if response.status_code == 200:
             result = response.json()["response"]
+            self.logger.debug(f'Received LLM response: "{result}"')
+            return result
+        else:
+            raise Exception(f"Failed with status code: {response.status_code}")
+
+
+class OpenAILLMClient(LLMClient):
+    def __init__(self, logger: logging.Logger, api_key: str, model="gpt-4o-mini"):
+        self.logger = logger
+        self.api_key = api_key
+        self.model = model
+        self.client = openai.OpenAI(api_key=api_key)
+        self.available_models = [
+            "gpt-4o-mini",
+            "gpt-3.5-turbo",
+            "text-embedding-3-small",
+            "dall-e-3",
+            "tts-1",
+            "whisper-1",
+        ]
+
+    def get_response(self, prompt: str) -> str:
+        self.logger.debug(f'Prompting LLM with "{prompt}"')
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if response.status_code == 200:
+            result = response["choices"][0]["message"]["content"].strip()
             self.logger.debug(f'Received LLM response: "{result}"')
             return result
         else:

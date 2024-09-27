@@ -2,3 +2,4 @@ streamlit==1.38.0
 langchain_core
 langchain_ollama
 streamlit_ace
+openai==1.47.1
