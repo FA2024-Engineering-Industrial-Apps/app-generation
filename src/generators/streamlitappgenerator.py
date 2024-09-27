@@ -3,11 +3,19 @@ import time
 import tempfile
 import sys
 import subprocess
+import streamlit as st
 from .promptadapter import StreamlitAppPromptAdapter
 import logging
 
+
 class StreamlitAppGenerator(AppGenerator):
-    def __init__(self, logger : logging.Logger, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+    def __init__(
+        self,
+        logger: logging.Logger,
+        app_name: str = "My IE App",
+        llm_model: str = "LLaMA-3-Latest",
+        api_key: str = "",
+    ):
         super().__init__(logger, app_name, llm_model, api_key)
         self.prompt_adapter = StreamlitAppPromptAdapter()
 

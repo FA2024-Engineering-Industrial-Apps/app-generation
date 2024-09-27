@@ -1,5 +1,5 @@
 import os
-import re
+
 
 class PromptFetcher:
     def __init__(self, path: str = "prompts/", place_holder="[%text%]") -> None:
