@@ -135,7 +135,7 @@ class IEAppGenerator(AppGenerator):
         except KeyError as e:
             print(traceback.format_exc())
             self.logger.error(f'The LLM has returned an invalid result.')
-        except:
+        except Exception:
             print(traceback.format_exc())
         finally:
             self._ensure_empty_folder(config.LOG_FOLDER)
