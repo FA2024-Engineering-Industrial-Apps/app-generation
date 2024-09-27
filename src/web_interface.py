@@ -1,5 +1,8 @@
 import streamlit as st
+import streamlit.components.v1 as compenents
 from generators.ieappgenerator import IEAppGenerator
+
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,13 +15,17 @@ logging.basicConfig(
 )
 
 generator = IEAppGenerator(logger)
+
+# st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
+# panel_generator, panel_app = st.columns([1, 1])
+
 st.title("Industrial Edge Application Generator")
 
 # LLM Selection
 st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
-source_options = ["FAPS LLM", "Workstation LLM", "Siemens LLM"]
+source_options = ["FAPS LLM", "Workstation LLM", "Siemens LLM", "ChatGPT"]
 source = st.radio("Select LLM source", source_options, horizontal=True)
 
 # Select model
@@ -34,6 +41,12 @@ elif source == "FAPS LLM":
         generator.select_llm_client(source, url)
     else:
         st.warning("Please enter the URL to the FAPS LLM.")
+elif source == "ChatGPT":
+    api_key = st.text_input("Enter your ChatGPT API key", type="password")
+    if api_key:
+        generator.select_llm_client(source, api_key)
+    else:
+        st.warning("Please enter your ChatGPT API key.")
 else:
     generator.select_llm_client(source)
 
@@ -59,3 +72,14 @@ if st.button("Generate Code"):
                 st.error(f"An error occurred: {e}")
     else:
         st.warning("Please enter a prompt.")
+
+
+st.divider()
+
+
+
+
+if st.button("After app is generated"):
+    compenents.iframe("http://localhost:8080", height=800)
+    # os.system("python3 -m ~/dist/my_ie_app/program/src/server.py")
+
