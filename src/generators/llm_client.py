@@ -126,15 +126,13 @@ class OpenAILLMClient(LLMClient):
         self.api_key = api_key
         self.client = openai.OpenAI(api_key=api_key)
         self.available_models = {
-            "GPT 4o mini": "gpt-4o-mini",
-            "GPT 3.5 Turbo": "gpt-3.5-turbo",
-            "Text Embedding 3 small": "text-embedding-3-small",
-            "Dall-e 3": "dall-e-3",
-            "TTS 1": "tts-1",
-            "Whisper 1": "whisper-1",
+            "GPT 4o" : "gpt-4o",
+            "GPT 4o mini" : "gpt-4o-mini",
+            "GPT 4 turbo" : "gpt-4-turbo",
+            "GPT 3.5 turbo": "gpt-3.5-turbo"
         }
         # set default model
-        self.model = "gpt-4o-mini"
+        self.model = model
 
     def get_response(self, prompt: str) -> str:
         self.logger.debug(f'Prompting LLM with "{prompt}"')
