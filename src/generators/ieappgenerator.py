@@ -14,7 +14,7 @@ class IEAppGenerator(AppGenerator):
     def __init__(
         self,
         logger: logging.Logger,
-        app_name: str = "My_IE_App",
+        app_name: str = "My IE App",
         llm_model: str = "LLaMA-3-Latest",
         api_key: str = "",
     ):
@@ -200,7 +200,7 @@ class IEAppGenerator(AppGenerator):
     def _configure_docker_compose_file(self) -> None:
         dst_file = os.path.join(self.app_root_path, "docker_compose.yml")
         self.file_copier.copy_and_insert(
-            "docker-compose.yml", dst_file, {"image_name": self.app_name}
+            "docker-compose.yml", dst_file, {"image_name": self.app_name.replace(' ', '_')}
         )
 
     def _ensure_empty_folder(self, folder_path):
