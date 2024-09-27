@@ -4,14 +4,21 @@ from logging import Logger
 from . import config
 import os
 
+
 # Base class for LLM clients
 class AppGenerator(ABC):
     @abstractmethod
-    def __init__(self, logger : Logger, app_name : str = 'My_IE_App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
+    def __init__(
+        self,
+        logger: Logger,
+        app_name: str = "My_IE_App",
+        llm_model: str = "LLaMA-3-Latest",
+        api_key: str = "",
+    ):
         self.logger = logger
         self.prompt = ""
         self.app_name = app_name.strip()
-        self.app_folder = self.app_name.replace(' ', '_').lower()
+        self.app_folder = self.app_name.replace(" ", "_").lower()
         self.app_root_path = os.path.join(config.DESTINATION_DIR, self.app_folder)
         self.select_llm_client(llm_model, api_key)
 
@@ -30,7 +37,7 @@ class AppGenerator(ABC):
             else:
                 raise Exception("No URL provided.")
         else:
-            self.llm_client = WorkstationLLMClient(self.logger, llm_model)
+            self.llm_client = WorkstationLLMClient(self.logger)
 
     def get_requirements(self, prompt):
         pass
@@ -46,4 +53,3 @@ class AppGenerator(ABC):
 
     def stop(self):
         pass
-
