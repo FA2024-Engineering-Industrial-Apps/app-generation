@@ -2,8 +2,11 @@ import streamlit as st
 from generators.ieappgenerator import IEAppGenerator
 from generators.streamlitappgenerator import StreamlitAppGenerator
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+if os.path.exists('web_interface.log'):
+    os.remove('web_interface.log')
 logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 generator = IEAppGenerator(logger)
