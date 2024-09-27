@@ -9,6 +9,12 @@ class LLMClient(ABC):
     def select_model(self, model_name: str):
         self.model = self.available_models[model_name]
 
+    def set_api_key(self, api_key: str):
+        if api_key:
+            self.api_key = api_key
+        else:
+            raise Exception("No API key provided.")
+
     @abstractmethod
     def get_response(self, prompt: str) -> str:
         pass
@@ -16,14 +22,9 @@ class LLMClient(ABC):
 
 # Siemens LLM client
 class SiemensLLMClient(LLMClient):
-    def __init__(self, logger: logging.Logger, api_key):
+    def __init__(self, logger: logging.Logger):
         self.logger = logger
-        self.api_key = api_key
         self.url = "https://api.siemens.com/llm/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
         self.available_models = {
             "mistral-7b-instruct": "mistral-7b-instruct",
             "starcoder2-3b": "starcoder2-3b",
@@ -33,6 +34,10 @@ class SiemensLLMClient(LLMClient):
         self.model = "mistral-7b-instruct"
 
     def get_response(self, prompt: str) -> str:
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
         payload = {
             "model": self.model,
             "max_tokens": 18000,
@@ -41,7 +46,7 @@ class SiemensLLMClient(LLMClient):
             "stream": False,
         }
         self.logger.debug(f'Prompting LLM with "{prompt}"')
-        response = requests.post(self.url, json=payload, headers=self.headers)
+        response = requests.post(self.url, json=payload, headers=headers)
 
         if response.status_code == 200:
             result = response.json()["choices"][0]["message"]["content"].strip()
@@ -85,9 +90,8 @@ class WorkstationLLMClient(LLMClient):
 
 
 class FAPSLLMClient(LLMClient):
-    def __init__(self, logger: logging.Logger, url: str):
+    def __init__(self, logger: logging.Logger):
         self.logger = logger
-        self.url = url
         self.available_models = {
             "Llama3.1-70B": "llama3.1:70b",
             "Llama3.1-405B": "llama3.1:405b",
@@ -102,6 +106,15 @@ class FAPSLLMClient(LLMClient):
         }
         # Set default model
         self.model = "llama3.1:70b"
+
+    def set_api_keys(self, url: str):
+        self.url = url
+
+    def set_api_key(self, url: str):
+        if url:
+            self.api_key = url
+        else:
+            raise Exception("No URL provided.")
 
     def get_response(self, prompt: str) -> str:
         payload = {
@@ -121,10 +134,8 @@ class FAPSLLMClient(LLMClient):
 
 
 class OpenAILLMClient(LLMClient):
-    def __init__(self, logger: logging.Logger, api_key: str, model="gpt-4o-mini"):
+    def __init__(self, logger: logging.Logger):
         self.logger = logger
-        self.api_key = api_key
-        self.client = openai.OpenAI(api_key=api_key)
         self.available_models = {
             "GPT 4o" : "gpt-4o",
             "GPT 4o mini" : "gpt-4o-mini",
@@ -133,6 +144,10 @@ class OpenAILLMClient(LLMClient):
         }
         # set default model
         self.model = model
+
+    def set_api_key(self, api_key: str):
+        self.api_key = api_key
+        self.client = openai.OpenAI(api_key=self.api_key)
 
     def get_response(self, prompt: str) -> str:
         self.logger.debug(f'Prompting LLM with "{prompt}"')

@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
-from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient, OpenAILLMClient
+from .llm_client import (
+    SiemensLLMClient,
+    WorkstationLLMClient,
+    FAPSLLMClient,
+    OpenAILLMClient,
+)
 from logging import Logger
 from . import config
 import os
@@ -13,31 +18,22 @@ class AppGenerator(ABC):
         logger: Logger,
         app_name: str = "My_IE_App",
         llm_model: str = "LLaMA-3-Latest",
-        api_key: str = "",
     ):
         self.logger = logger
         self.prompt = ""
         self.app_name = app_name.strip()
         self.app_folder = self.app_name.replace(" ", "_").lower()
         self.app_root_path = os.path.join(config.DESTINATION_DIR, self.app_folder)
-        self.select_llm_client(llm_model, api_key)
+        self.select_llm_client(llm_model)
 
-    def select_llm_client(self, llm_model, api_key=""):
+    def select_llm_client(self, llm_model):
         """Select the appropriate LLM client based on user choice."""
         if llm_model == "Siemens LLM":
-            if api_key:
-                api_key = api_key
-                self.llm_client = SiemensLLMClient(self.logger, api_key)
-            else:
-                raise Exception("No API Key.")
+            self.llm_client = SiemensLLMClient(self.logger)
         elif llm_model == "FAPS LLM":
-            url = api_key
-            if url:
-                self.llm_client = FAPSLLMClient(self.logger, url)
-            else:
-                raise Exception("No URL provided.")
+            self.llm_client = FAPSLLMClient(self.logger)
         elif llm_model == "ChatGPT":
-            self.llm_client = OpenAILLMClient(self.logger, api_key)
+            self.llm_client = OpenAILLMClient(self.logger)
         else:
             self.llm_client = WorkstationLLMClient(self.logger)
 
