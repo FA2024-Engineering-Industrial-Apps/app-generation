@@ -3,13 +3,11 @@ from generators.ieappgenerator import IEAppGenerator
 from generators.streamlitappgenerator import StreamlitAppGenerator
 import logging
 import os
+import traceback
 
 logger = logging.getLogger(__name__)
-if os.path.exists('web_interface.log'):
-    os.remove('web_interface.log')
 logging.basicConfig(filename='web_interface.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s][%(levelname)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
-generator = IEAppGenerator(logger)
 generator = IEAppGenerator(logger)
 st.title("Industrial Edge Application Generator")
 
@@ -18,7 +16,6 @@ st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
 llm_options = [
-    "FAPS LLM",
     "FAPS LLM",
     "Siemens LLM",
     "Gemma-2",
@@ -37,12 +34,6 @@ if llm_model == "Siemens LLM":
         generator.select_llm_client(llm_model, api_key)
     else:
         st.warning("Please enter your Siemens API key.")
-elif llm_model == "FAPS LLM":
-    url = st.text_input("Enter the URL to the LLM", type="default")
-    if url:
-        generator.select_llm_client(llm_model, url)
-    else:
-        st.warning("Please enter the URL to the FAPS LLM.")
 elif llm_model == "FAPS LLM":
     url = st.text_input("Enter the URL to the LLM", type="default")
     if url:

@@ -9,7 +9,7 @@ IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
     'frontend_and_backend' : {
         'root' : 'program',
         'source' : os.path.join('program', 'src'),
-        'html' : os.path.join('program', 'src', 'template'),
+        'html' : os.path.join('program', 'src', 'templates'),
         'static' : os.path.join('program', 'src', 'static')
         },
     'frontend_only' : {
