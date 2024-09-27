@@ -1,7 +1,7 @@
 from .app_generator import AppGenerator
 from .promptfetcher import PromptFetcher
 from .filecopier import FileCopier
-from .extractor import extract_imports_from_directory
+from .extractor import extract_imports_from_directory, extract_code
 from typing import Dict
 import os
 import traceback
@@ -13,11 +13,11 @@ class IEAppGenerator(AppGenerator):
     def __init__(self, logger : logging.Logger, app_name : str = 'My IE App', llm_model : str = "LLaMA-3-Latest", api_key : str = ""):
         super().__init__(logger, app_name, llm_model, api_key)
         self.prompt_fetcher : PromptFetcher = PromptFetcher()
-        self.file_copier : FileCopier = FileCopier()
+        self.file_copier : FileCopier = FileCopier(config.TEMPLATE_FILES_DIR)
         self.artifacts : Dict[str,str] = dict()
     
     def _define_task_distribution(self) -> None:
-        architecture_description = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_task_distribution', self.artifacts['use_case']))
+        architecture_description = self.llm_client.get_response(self.prompt_fetcher.fetch('define_task_distribution', self.artifacts['use_case']))
         self.artifacts.update({'architecture_description' : architecture_description})
 
     def _define_restful_api(self) -> None:
@@ -26,16 +26,20 @@ class IEAppGenerator(AppGenerator):
 
     def _generate_web_interface(self) -> None:
         web_interface_files = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_web_interface_fb', self.artifacts['frontend_architecture_description'], self.artifacts['restful_api_definition'])).split(config.FRONTEND_FILE_SEPARATOR_STRING)
-        if len(web_interface_files) == 3:
-            index_html_text = web_interface_files[0]
-            styles_css_text = web_interface_files[1]
-            script_js_text = web_interface_files[2]
+        if len(web_interface_files) >= 3:
+            index_html_text = extract_code(web_interface_files[0], 'html')
+            styles_css_text = extract_code(web_interface_files[1], 'css')
+            script_js_text = extract_code(web_interface_files[2], 'javascript')
             
-            with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['html'], 'index.html'), 'w') as file:
+            self.artifacts.update({'index_html' : index_html_text})
+            self.artifacts.update({'styles_css' : styles_css_text})
+            self.artifacts.update({'script_js' : script_js_text})
+            
+            with open(os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['html'], 'index.html'), 'w') as file:
                 file.write(index_html_text)
-            with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['static'], 'styles.css'), 'w') as file:
+            with open(os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['static'], 'styles.css'), 'w') as file:
                 file.write(styles_css_text)
-            with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['static'], 'script.js'), 'w') as file:
+            with open(os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['static'], 'script.js'), 'w') as file:
                 file.write(script_js_text)
         else:
             raise Exception('The LLM failed to generate the frontend web interface files.')
@@ -50,41 +54,38 @@ class IEAppGenerator(AppGenerator):
         self.artifacts.update({'backend_app_method_signatures' : backend_app_method_signatures})
 
     def _generate_backend_http_server(self) -> None:
-        backend_http_server_code = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_backend_http', self.artifacts['restful_api_definition'], self.artifacts['backend_app_method_signatures']))
+        backend_http_server_code = extract_code(self.llm_client.get_response(self.prompt_fetcher.fetch('generate_backend_http', self.artifacts['restful_api_definition'], self.artifacts['backend_app_method_signatures'])), 'python')
         self.artifacts.update({'backend_http_server_code' : backend_http_server_code})
-        with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'], 'server.py'), 'w') as file:
+        with open(os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'], 'server.py'), 'w') as file:
             file.write(backend_http_server_code)
 
     def _generate_backend_app(self) -> None:
-        backend_app_code = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_backend', self.artifacts['backend_app_method_signatures'], self.artifacts['backend_architecture_description']))
+        backend_app_code = extract_code(self.llm_client.get_response(self.prompt_fetcher.fetch('generate_backend', self.artifacts['backend_app_method_signatures'], self.artifacts['backend_architecture_description'])), 'python')
         self.artifacts.update({'backend_app_code' : backend_app_code})
-        with open(os.path.join(config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'], 'backend.py'), 'w') as file:
+        with open(os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'], 'backend.py'), 'w') as file:
             file.write(backend_app_code)
 
+    def _package_backend_application(self) -> None:
+        self.file_copier.copy_and_insert(config.MQTT_LIB_FILENAME, os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source']))
+
     def _package_dockerfile(self) -> None:
-        # TODO : adapt path
-        dst_file = self.app_folder + "/program/Dockerfile"
+        dst_file = os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['root'], "Dockerfile")
         self.file_copier.copy_and_insert('Dockerfile', dst_file, {})
-        pass
 
     def _generate_requirements(self) -> None:
-        # TODO : adapt path
-        backend_dir = self.app_folder + "/program/src/"
+        backend_dir = os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['source'])
         imports = extract_imports_from_directory(backend_dir)
         import_list = ""
         for module in sorted(imports):
-            imports_str += f"{module}\n"
+            import_list += f"{module}\n"
         self.artifacts.update({'import_list' : import_list})
         package_list = self.llm_client.get_response(self.prompt_fetcher.fetch('generate_requirements', self.artifacts['import_list']))
-        dst_file = self.app_folder + "/program/Dockerfile"
+        dst_file = os.path.join(self.app_root_path, config.IE_APP_FOLDER_STRUCTURE['frontend_and_backend']['root'], "Dockerfile")
         self.file_copier.copy_and_insert('requirements.txt', dst_file, {'package_list' : package_list})
-        pass
 
     def _configure_docker_compose_file(self) -> None:
-        # TODO : adapt path
-        dst_file = self.app_folder + "/docker_compose.yml"
+        dst_file = os.path.join(self.app_root_path, "docker_compose.yml")
         self.file_copier.copy_and_insert('docker-compose.yml', dst_file, {'image_name' : self.app_name})
-        pass
     
     def _ensure_empty_folder(self, folder_path):
         if os.path.exists(folder_path):
@@ -93,9 +94,9 @@ class IEAppGenerator(AppGenerator):
         os.makedirs(folder_path, exist_ok=True)
         
     def _create_app_folder_structure(self, config_name : str) -> None:
-        self._ensure_empty_folder(os.path.join(config.DESTINATION_DIR, self.app_folder))
+        self._ensure_empty_folder(self.app_root_path)
         for folder in config.IE_APP_FOLDER_STRUCTURE[config_name].values():
-            os.makedirs(os.path.join(config.DESTINATION_DIR, folder))
+            os.makedirs(os.path.join(self.app_root_path, folder), exist_ok=True)
     
     def _generate_frontend_and_backend(self) -> None:
         self._create_app_folder_structure('frontend_and_backend')
@@ -133,7 +134,7 @@ class IEAppGenerator(AppGenerator):
         except KeyError as e:
             print(traceback.format_exc())
             self.logger.error(f'The LLM has returned an invalid result.')
-        except Exception:
+        except:
             print(traceback.format_exc())
         finally:
             self._ensure_empty_folder(config.LOG_FOLDER)

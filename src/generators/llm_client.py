@@ -80,13 +80,14 @@ class FAPSLLMClient(LLMClient):
     def get_response(self, prompt : str) -> str:
         payload = {
             "model": self.model,
-            "max_tokens": 18000,
             "prompt": prompt,
-            "temperature": 0.6,
+            "options" : {
+                "temperature": 0.6
+            },
             "stream": False,
         }
         self.logger.debug(f'Prompting LLM with "{prompt}"')
-        response = requests.post(self.url, json=payload)
+        response = requests.post(self.url + '/api/generate', json=payload)
         if response.status_code == 200:
             result = response.json()["response"]
             self.logger.debug(f'Received LLM response: "{result}"')
