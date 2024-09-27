@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient
+from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient, OpenAILLMClient
 from logging import Logger
 from . import config
 import os
@@ -36,6 +36,8 @@ class AppGenerator(ABC):
                 self.llm_client = FAPSLLMClient(self.logger, url)
             else:
                 raise Exception("No URL provided.")
+        elif llm_model == "ChatGPT":
+            self.llm_client = OpenAILLMClient(self.logger, api_key)
         else:
             self.llm_client = WorkstationLLMClient(self.logger)
 
