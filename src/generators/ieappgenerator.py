@@ -107,7 +107,6 @@ class IEAppGenerator(AppGenerator):
         self._generate_backend_http_server()
         self._generate_web_interface()
         self._generate_backend_app()
-        self._package_backend_application()
         
         self._package_dockerfile()
         self._generate_requirements()
