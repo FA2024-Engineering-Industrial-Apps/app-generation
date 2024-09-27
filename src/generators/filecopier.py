@@ -9,7 +9,7 @@ class FileCopier:
         """
         self.src_folder = src_folder
 
-    def copy_and_insert(self, src_filename: str, dest_file: str, replacements: dict):
+    def copy_and_insert(self, src_filename: str, dest_file: str, replacements: dict = dict()):
         """
         Copies a file from the source folder to the destination file and replaces placeholders.
 

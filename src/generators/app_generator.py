@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from .llm_client import SiemensLLMClient, WorkstationLLMClient, FAPSLLMClient
 from logging import Logger
+from . import config
+import os
 
 # Base class for LLM clients
 class AppGenerator(ABC):
@@ -10,6 +12,7 @@ class AppGenerator(ABC):
         self.prompt = ""
         self.app_name = app_name.strip()
         self.app_folder = self.app_name.replace(' ', '_').lower()
+        self.app_root_path = os.path.join(config.DESTINATION_DIR, self.app_folder)
         self.select_llm_client(llm_model, api_key)
 
     def select_llm_client(self, llm_model, api_key=""):

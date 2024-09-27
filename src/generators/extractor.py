@@ -2,6 +2,20 @@ import os
 import re
 
 
+def extract_code(text : str, file_type : str) -> str:
+    """
+        Extracts the source code of a file with the given type from an LLM generated text.
+        
+        Returns the code between ```file_type and ``` of the input text. LLM's typically output code enclosed in this way.
+        If this pattern
+    """
+    match = re.search(r'```' + file_type + r'(.*)```', text, re.DOTALL)
+    if match == None:
+        match = re.search(r'```(.*)```', text, re.DOTALL)
+    if match == None:
+        raise Exception(f'No source code found in the provided text.')
+    return match.group(1)
+
 def extract_imports_from_file(file_path):
     """Extract all imports from a given Python file."""
     imports = set()

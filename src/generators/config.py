@@ -3,6 +3,8 @@ from typing import Dict, Any
 
 FRONTEND_FILE_SEPARATOR_STRING : str = '<<++>>'
 DESTINATION_DIR : str = 'dist'
+TEMPLATE_FILES_DIR : str = 'template_files'
+MQTT_LIB_FILENAME : str = 'mqtt_lib.py'
 IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
     'frontend_and_backend' : {
         'root' : 'program',
