@@ -33,16 +33,17 @@ class LLMClient(ABC):
         @param tries: Maximum number of attempts before the error is propagated.
         @return: Return value of the validator function if it does not raise an exception.
         """
-        attempt: int = 1
+        attempt: int = 0
         succeeded: bool = False
         result: Any
-        while (not succeeded) and (attempt <= tries):
+        while (not succeeded) and (attempt < tries):
             try:
                 result = validator(self.get_response(prompt))
                 succeeded = True
             except BadLLMResponseError:
-                if attempt == tries:
+                if attempt == (tries - 1):
                     raise
+            attempt = attempt + 1
         
         return result
         

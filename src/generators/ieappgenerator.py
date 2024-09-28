@@ -2,13 +2,13 @@ from .app_generator import AppGenerator
 from .promptfetcher import PromptFetcher
 from .filecopier import FileCopier
 from .extractor import extract_imports_from_directory, extract_code
-from typing import Dict
+from typing import Dict, Tuple
 import os
 import traceback
 from . import config
 import shutil
 import logging
-
+from .llm_client import BadLLMResponseError
 
 class IEAppGenerator(AppGenerator):
     def __init__(
@@ -21,6 +21,15 @@ class IEAppGenerator(AppGenerator):
         self.prompt_fetcher: PromptFetcher = PromptFetcher()
         self.file_copier: FileCopier = FileCopier(config.TEMPLATE_FILES_DIR)
         self.artifacts: Dict[str, str] = dict()
+    
+    @staticmethod
+    def _python_code_validator(response: str) -> str:
+        code: str
+        try:
+            code = extract_code(response, 'python')
+        except ValueError:
+            raise BadLLMResponseError('LLM returned code in non parsable form.')
+        return code
 
     def _define_task_distribution(self) -> None:
         architecture_description = self.llm_client.get_response(
@@ -39,55 +48,66 @@ class IEAppGenerator(AppGenerator):
         self.artifacts.update({"restful_api_definition": restful_api_definition})
 
     def _generate_web_interface(self) -> None:
-        web_interface_files = self.llm_client.get_response(
+        
+        def validator(response: str) -> Tuple[str, str, str]:
+            self.artifacts.update({"web_interface_files": response})
+            web_interface_files = response.split(config.FRONTEND_FILE_SEPARATOR_STRING)
+            html: str
+            css: str
+            js: str
+            if len(web_interface_files) == 3:
+                try:
+                    html = extract_code(web_interface_files[0], "html")
+                    css = extract_code(web_interface_files[1], "css")
+                    js = extract_code(web_interface_files[2], "javascript")
+                except ValueError:
+                    self.logger.warning('LLM failed to return frontend in parsable form')
+                    raise BadLLMResponseError('LLM failed to return frontend code in parsable form.')
+            else:
+                self.logger.warning('LLM failed to return frontend in parsable form')
+                raise BadLLMResponseError('LLM failed to return frontend code in parsable form.')
+            return (html, css, js)
+        
+        (index_html_text, styles_css_text, script_js_text) = self.llm_client.get_validated_response(
             self.prompt_fetcher.fetch(
                 "generate_web_interface_fb",
                 self.artifacts["frontend_architecture_description"],
                 self.artifacts["restful_api_definition"],
-            )
+            ),
+            validator
         )
-        self.artifacts.update({"web_interface_files": web_interface_files})
-        web_interface_files = web_interface_files.split(config.FRONTEND_FILE_SEPARATOR_STRING)
-        if len(web_interface_files) >= 3:
-            index_html_text = extract_code(web_interface_files[0], "html")
-            styles_css_text = extract_code(web_interface_files[1], "css")
-            script_js_text = extract_code(web_interface_files[2], "javascript")
 
-            self.artifacts.update({"index_html": index_html_text})
-            self.artifacts.update({"styles_css": styles_css_text})
-            self.artifacts.update({"script_js": script_js_text})
+        self.artifacts.update({"index_html": index_html_text})
+        self.artifacts.update({"styles_css": styles_css_text})
+        self.artifacts.update({"script_js": script_js_text})
 
-            with open(
-                os.path.join(
-                    self.app_root_path,
-                    config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["html"],
-                    "index.html",
-                ),
-                "w",
-            ) as file:
-                file.write(index_html_text)
-            with open(
-                os.path.join(
-                    self.app_root_path,
-                    config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["static"],
-                    "styles.css",
-                ),
-                "w",
-            ) as file:
-                file.write(styles_css_text)
-            with open(
-                os.path.join(
-                    self.app_root_path,
-                    config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["static"],
-                    "script.js",
-                ),
-                "w",
-            ) as file:
-                file.write(script_js_text)
-        else:
-            raise Exception(
-                "The LLM failed to generate the frontend web interface files."
-            )
+        with open(
+            os.path.join(
+                self.app_root_path,
+                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["html"],
+                "index.html",
+            ),
+            "w",
+        ) as file:
+            file.write(index_html_text)
+        with open(
+            os.path.join(
+                self.app_root_path,
+                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["static"],
+                "styles.css",
+            ),
+            "w",
+        ) as file:
+            file.write(styles_css_text)
+        with open(
+            os.path.join(
+                self.app_root_path,
+                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["static"],
+                "script.js",
+            ),
+            "w",
+        ) as file:
+            file.write(script_js_text)
 
     def _split_architecture_description(self) -> None:
         separated_architecture = self.artifacts["architecture_description"].split(
@@ -111,16 +131,15 @@ class IEAppGenerator(AppGenerator):
         )
 
     def _generate_backend_http_server(self) -> None:
-        backend_http_server_code = extract_code(
-            self.llm_client.get_response(
-                self.prompt_fetcher.fetch(
-                    "generate_backend_http",
-                    self.artifacts["restful_api_definition"],
-                    self.artifacts["backend_app_method_signatures"],
-                )
+        backend_http_server_code = self.llm_client.get_validated_response(
+            self.prompt_fetcher.fetch(
+                "generate_backend_http",
+                self.artifacts["restful_api_definition"],
+                self.artifacts["backend_app_method_signatures"],
             ),
-            "python",
+            self._python_code_validator
         )
+        
         self.artifacts.update({"backend_http_server_code": backend_http_server_code})
         with open(
             os.path.join(
@@ -133,15 +152,13 @@ class IEAppGenerator(AppGenerator):
             file.write(backend_http_server_code)
 
     def _generate_backend_app(self) -> None:
-        backend_app_code = extract_code(
-            self.llm_client.get_response(
-                self.prompt_fetcher.fetch(
-                    "generate_backend",
-                    self.artifacts["backend_app_method_signatures"],
-                    self.artifacts["backend_architecture_description"],
-                )
+        backend_app_code = self.llm_client.get_validated_response(
+            self.prompt_fetcher.fetch(
+                "generate_backend",
+                self.artifacts["backend_app_method_signatures"],
+                self.artifacts["backend_architecture_description"],
             ),
-            "python",
+            self._python_code_validator
         )
         self.artifacts.update({"backend_app_code": backend_app_code})
         with open(

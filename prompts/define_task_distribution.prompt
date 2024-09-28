@@ -6,6 +6,7 @@ All data processing shall happen in the backend. Given this general software arc
 - roles of each components,
 - data & control flow within each component (what needs to be calculated and how? what messages need to be received or transmitted?),
 - interaction between the machine and the backend program, interaction between the frontend and backend programs (what queries/commands need to be sent? how often? what data needs to be exchanged?).
+- additional requirements and details about the software component. Write anything here that pertains to the given software component and is not mentioned elsewhere. Make sure to save every detail from the use-case description so no information is lost.
 
 Do not define any further details about the technologies. You should also not include the exact RESTful API, just describe the interaction.
 Structure the definition so that the first part is only about the frontend and the second part is only about the backend. Separate the two sections with the following character sequence: '<<++>>'. Only include necessary descriptions in each part and do not repeat things.

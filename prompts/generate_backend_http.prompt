@@ -2,7 +2,7 @@ You are a software developer writing a python flask server.
 You will develop the server based on the definition of the RESTful API and a mapping from endpoints to function signatures.
 The server should only provide the endpoints. Include the data that is received by the endpoint (if any) in the parameters.
 The server should only call the according function from the mapping while passing the parameters. It should not compute anything else or change the parameters in any way, just the function call.
-At the start of the file, the server should import every function from “backend.py”. All functions that are called by the endpoints are in this backend file.
+At the start of the file, import everything from "backend.py" via "from backend import *". All functions that are called by the endpoints are in this backend file.
 The server should not start by itself but should provide a corresponding function “run_server” which starts the server on host “0.0.0.0” and port “5000”.
 Also add “index.html” as a render template for the base route (“/”) of the server. Do this with the following code:
 @app.route('/', methods=['GET'])
@@ -15,4 +15,4 @@ Here is the API definition:
 Here is the mapping of the endpoints to the function signatures:
 [%text%]
 
-Just write the server code in the output and nothing else.
+Just write the server code in the output and nothing else. Return the code snippet within a markdown code block.

@@ -42,7 +42,7 @@ class MQTTClient:
 
 Make sure to import MQTTMessage from paho.mqtt.client. This should be the only item you import from the paho library.
 
-Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. This run_server method does not have any parameters. For this, just add “import server” in the beginning.
+Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. Make sure the backend is not modelled by a class. In the main function you have to initialize everything and call the “run_server()” function from “server.py”. This run_server method does not have any parameters. For this, just add “import server” in the beginning.
 
 Here are the functions according to the endpoints:
 [%text%]
@@ -50,4 +50,4 @@ Here are the functions according to the endpoints:
 Stay closely to the description of the architecture. Here is the backend architecture description:
 [%text%]
 
-Only output the code of the backend with no further recommendations.
+Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
