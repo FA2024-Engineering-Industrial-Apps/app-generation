@@ -4,9 +4,11 @@ import logging
 import openai
 from typing import Callable, Any
 
+
 class BadLLMResponseError(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
 
 # Base class for LLM clients
 class LLMClient(ABC):
@@ -22,12 +24,14 @@ class LLMClient(ABC):
     @abstractmethod
     def get_response(self, prompt: str) -> str:
         pass
-    
-    def get_validated_response(self, prompt: str, validator: Callable[[str], Any], tries=3) -> Any:
+
+    def get_validated_response(
+        self, prompt: str, validator: Callable[[str], Any], tries=3
+    ) -> Any:
         """
         Prompts the LLM and calls the validator method. Retries the prompt if the validator raises
         a BadLLMResponseError.
-        
+
         @param prompt: Prompt to send to the LLM.
         @param validator: Function with arbitrary return value. Should raise a BadLLMResponseError if validation failed.
         @param tries: Maximum number of attempts before the error is propagated.
@@ -44,9 +48,10 @@ class LLMClient(ABC):
                 if attempt == (tries - 1):
                     raise
             attempt = attempt + 1
-        
+
         return result
-        
+
+
 # Siemens LLM client
 class SiemensLLMClient(LLMClient):
     def __init__(self, logger: logging.Logger):
@@ -134,12 +139,9 @@ class FAPSLLMClient(LLMClient):
         # Set default model
         self.model = "llama3.1:70b"
 
-    def set_api_keys(self, url: str):
-        self.url = url
-
     def set_api_key(self, url: str):
         if url:
-            self.api_key = url
+            self.url = url
         else:
             raise Exception("No URL provided.")
 
@@ -164,10 +166,10 @@ class OpenAILLMClient(LLMClient):
     def __init__(self, logger: logging.Logger):
         self.logger = logger
         self.available_models = {
-            "GPT 4o" : "gpt-4o",
-            "GPT 4o mini" : "gpt-4o-mini",
-            "GPT 4 turbo" : "gpt-4-turbo",
-            "GPT 3.5 turbo": "gpt-3.5-turbo"
+            "GPT 4o": "gpt-4o",
+            "GPT 4o mini": "gpt-4o-mini",
+            "GPT 4 turbo": "gpt-4-turbo",
+            "GPT 3.5 turbo": "gpt-3.5-turbo",
         }
 
     def set_api_key(self, api_key: str):
@@ -177,11 +179,11 @@ class OpenAILLMClient(LLMClient):
     def get_response(self, prompt: str) -> str:
         self.logger.debug(f'Prompting LLM with "{prompt}"')
         completion = self.client.chat.completions.create(
-                model=self.model,
+            model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            stream=False
+            stream=False,
         )
-        
+
         result = completion.choices[0].message.content
         self.logger.debug(f'Received LLM response: "{result}"')
         return result
