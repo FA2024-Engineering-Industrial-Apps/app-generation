@@ -5,7 +5,7 @@ from appgenerator.util.filecopier import FileCopier
 import shutil
 import os
 
-PREVIEW_SRC_FOLDER = 'preview'
+PREVIEW_SRC_FOLDER = os.path.join('artifacts', 'preview')
 
 server = Flask(__name__, template_folder=os.path.join('..', PREVIEW_SRC_FOLDER, 'templates'), static_folder=os.path.join('..', PREVIEW_SRC_FOLDER, 'static'))
 server_running: bool = False

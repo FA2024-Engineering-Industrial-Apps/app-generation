@@ -2,8 +2,10 @@ import os
 from typing import Dict, Any
 
 FRONTEND_FILE_SEPARATOR_STRING : str = '<<++>>'
-DESTINATION_DIR : str = 'dist'
-TEMPLATE_FILES_DIR : str = 'template_files'
+DESTINATION_DIR : str = os.path.join('artifacts', 'dist')
+TEMPLATE_FILES_DIR : str = os.path.join('resources', 'templates')
+PROMPTS_DIR: str = os.path.join('resources', 'prompts')
+PROMPT_PLACEHOLDER_STRING: str = '[%text%]'
 MQTT_LIB_FILENAME : str = 'mqtt_lib.py'
 IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
     'frontend_and_backend' : {
@@ -21,5 +23,5 @@ IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
         'source' : os.path.join('program', 'src'),
         }
     }
-LOG_FOLDER : str = 'logs'
+LOG_FOLDER : str = os.path.join('artifacts', 'logs')
 PROMPT_RERUN_LIMIT: int = 5

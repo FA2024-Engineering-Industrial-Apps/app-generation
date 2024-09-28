@@ -9,6 +9,9 @@ class AppArchitecture(Enum):
     FRONTEND_AND_BACKEND = 'frontend_and_backend'
 
 class GenerationInstance():
+    """
+    Data copy of the file structure of the generated app
+    """
     def __init__(self, app_name: str = "My IE App") -> None:
         self.name = app_name.strip()
         self.folder = self.name.replace(" ", "_").lower()
