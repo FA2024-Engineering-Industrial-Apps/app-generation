@@ -21,7 +21,7 @@ def extract_code(text : str, file_type : str) -> str:
 def extract_imports_from_file(file_path):
     """Extract all imports from a given Python file."""
     imports = set()
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding="utf8") as file:
         for line in file:
             # Match regular import statements: import x or from x import y
             match = re.match(r'^\s*(import|from)\s+([\w\.]+)', line)

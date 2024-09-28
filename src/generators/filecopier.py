@@ -22,7 +22,7 @@ class FileCopier:
 
         try:
             # Read the content of the source file
-            with open(src_file, 'r') as f:
+            with open(src_file, 'r', encoding="utf8") as f:
                 content = f.read()
 
             # Replace the placeholders with corresponding user input
@@ -30,7 +30,7 @@ class FileCopier:
                 content = content.replace(f"{{{{{placeholder}}}}}", replacement)
 
             # Write the modified content to the destination file
-            with open(dest_file, 'w') as f:
+            with open(dest_file, 'w', encoding="utf8") as f:
                 f.write(content)
 
         except FileNotFoundError:

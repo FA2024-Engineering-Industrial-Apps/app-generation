@@ -113,6 +113,7 @@ class IEAppGenerator(AppGenerator):
                 "index.html",
             ),
             "w",
+            encoding="utf8"
         ) as file:
             file.write(index_html_text)
         with open(
@@ -122,6 +123,7 @@ class IEAppGenerator(AppGenerator):
                 "styles.css",
             ),
             "w",
+            encoding="utf8"
         ) as file:
             file.write(styles_css_text)
         with open(
@@ -131,6 +133,7 @@ class IEAppGenerator(AppGenerator):
                 "script.js",
             ),
             "w",
+            encoding="utf8"
         ) as file:
             file.write(script_js_text)
 
@@ -176,6 +179,7 @@ class IEAppGenerator(AppGenerator):
                 "server.py",
             ),
             "w",
+            encoding="utf8"
         ) as file:
             file.write(backend_http_server_code)
 
@@ -200,6 +204,7 @@ class IEAppGenerator(AppGenerator):
                 "backend.py",
             ),
             "w",
+            encoding="utf8"
         ) as file:
             file.write(backend_app_code)
 
@@ -319,6 +324,8 @@ class IEAppGenerator(AppGenerator):
             self._ensure_empty_folder(config.LOG_FOLDER)
             for artifact, text in self.artifacts.items():
                 with open(
-                    os.path.join(config.LOG_FOLDER, artifact + ".artifact"), "w"
+                    os.path.join(config.LOG_FOLDER, artifact + ".artifact"),
+                    "w",
+                    encoding="utf8"
                 ) as file:
                     file.write(text)
