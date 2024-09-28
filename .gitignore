@@ -160,6 +160,10 @@ cython_debug/
 # artifacts
 logs
 
+# Tool for publishing apps into the industrial edge managemeent system
+./publish/iectl
+# Environment variables for publishing the generated apps
+./publish/.env
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
