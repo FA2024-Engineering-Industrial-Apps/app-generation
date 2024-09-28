@@ -30,6 +30,15 @@ class IEAppGenerator(AppGenerator):
         except ValueError:
             raise BadLLMResponseError('LLM returned code in non parsable form.')
         return code
+    
+    @staticmethod
+    def _plaintext_validator(response: str) -> str:
+        code: str
+        try:
+            code = extract_code(response, 'markdown')
+        except ValueError:
+            raise BadLLMResponseError('LLM returned code in non parsable form.')
+        return code
 
     def _define_task_distribution(self) -> None:
         architecture_description = self.llm_client.get_response(
@@ -199,10 +208,11 @@ class IEAppGenerator(AppGenerator):
         for module in sorted(imports):
             import_list += f"{module}\n"
         self.artifacts.update({"import_list": import_list})
-        package_list = self.llm_client.get_response(
+        package_list = self.llm_client.get_validated_response(
             self.prompt_fetcher.fetch(
                 "generate_requirements", self.artifacts["import_list"]
-            )
+            ),
+            self._plaintext_validator
         )
         dst_file = os.path.join(
             self.app_root_path,
