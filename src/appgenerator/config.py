@@ -22,3 +22,4 @@ IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
         }
     }
 LOG_FOLDER : str = 'logs'
+PROMPT_RERUN_LIMIT: int = 5

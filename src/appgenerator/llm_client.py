@@ -2,24 +2,35 @@ import requests
 from abc import ABC, abstractmethod
 import logging
 import openai
-from typing import Callable, Any
-
+from typing import Callable, Any, Dict
 
 class BadLLMResponseError(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
 
-
 # Base class for LLM clients
 class LLMClient(ABC):
+    def __init__(self, logger: logging.Logger) -> None:
+        super().__init__()
+        self.logger: logging.Logger = logger
+        self.secret: str = None
+    
+    @property
+    def secret_name(self) -> str:
+        pass
+    
+    @property
+    def available_models(self) -> Dict[str, str]:
+        pass
+    
     def select_model(self, model_name: str):
         self.model = self.available_models[model_name]
 
-    def set_api_key(self, api_key: str):
-        if api_key:
-            self.api_key = api_key
+    def set_secret(self, secret: str):
+        if secret:
+            self.secret = secret
         else:
-            raise Exception("No API key provided.")
+            raise Exception("No secret (API key or URL) for LLM provided.")
 
     @abstractmethod
     def get_response(self, prompt: str) -> str:
@@ -54,20 +65,24 @@ class LLMClient(ABC):
 
 # Siemens LLM client
 class SiemensLLMClient(LLMClient):
+    
+    available_models = {
+        "mistral-7b-instruct": "mistral-7b-instruct",
+        "starcoder2-3b": "starcoder2-3b",
+        "bge-m3": "bge-m3",
+    }
+    
+    secret_name = 'Siemens API key'
+    
     def __init__(self, logger: logging.Logger):
-        self.logger = logger
+        super().__init__(logger)
         self.url = "https://api.siemens.com/llm/v1/chat/completions"
-        self.available_models = {
-            "mistral-7b-instruct": "mistral-7b-instruct",
-            "starcoder2-3b": "starcoder2-3b",
-            "bge-m3": "bge-m3",
-        }
         # set default model
         self.model = "mistral-7b-instruct"
 
     def get_response(self, prompt: str) -> str:
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.secret}",
             "Content-Type": "application/json",
         }
         payload = {
@@ -90,16 +105,20 @@ class SiemensLLMClient(LLMClient):
 
 # Workstation LLM client
 class WorkstationLLMClient(LLMClient):
+    
+    available_models = {
+        "LLaMA-3-70B": "llama3.1:70b",
+        "LLaMA-3-Latest": "llama3.1:latest",
+        "Gemma-2": "gemma2:27b",
+        "LlaMa-3-Groq-Tool-Use": "llama3-groq-tool-use:latest",
+        "Qwen-2.5": "qwen2.5:32b",
+    }
+    
+    secret_name = None
+    
     def __init__(self, logger: logging.Logger):
-        self.logger = logger
+        super().__init__(logger)
         self.url = "http://workstation.ferienakademie.de:11434/api/generate"
-        self.available_models = {
-            "LLaMA-3-70B": "llama3.1:70b",
-            "LLaMA-3-Latest": "llama3.1:latest",
-            "Gemma-2": "gemma2:27b",
-            "LlaMa-3-Groq-Tool-Use": "llama3-groq-tool-use:latest",
-            "Qwen-2.5": "qwen2.5:32b",
-        }
         # set default model
         self.model = "llama3.1:70b"
 
@@ -122,28 +141,26 @@ class WorkstationLLMClient(LLMClient):
 
 
 class FAPSLLMClient(LLMClient):
+    
+    available_models = {
+        "Llama3.1-70B": "llama3.1:70b",
+        "Llama3.1-405B": "llama3.1:405b",
+        "Llama3.2-Latest": "llama3.2:latest",
+        "Gemma2-27B": "gemma2:27b",
+        "Gemma2-Latest": "gemma2:latest",
+        "Qwen-2.5-32B": "qwen2.5:32b",
+        "Qwen-2.5-Latest": "qwen2.5:latest",
+        "Mixtral-8x7B": "mixtral:8x7b",
+        "Mixtral-8x22B": "mixtral:8x22b",
+        "Mixtral-Latest": "mixtral:latest",
+    }
+    
+    secret_name = 'FAPS LLM URL'
+    
     def __init__(self, logger: logging.Logger):
-        self.logger = logger
-        self.available_models = {
-            "Llama3.1-70B": "llama3.1:70b",
-            "Llama3.1-405B": "llama3.1:405b",
-            "Llama3.2-Latest": "llama3.2:latest",
-            "Gemma2-27B": "gemma2:27b",
-            "Gemma2-Latest": "gemma2:latest",
-            "Qwen-2.5-32B": "qwen2.5:32b",
-            "Qwen-2.5-Latest": "qwen2.5:latest",
-            "Mixtral-8x7B": "mixtral:8x7b",
-            "Mixtral-8x22B": "mixtral:8x22b",
-            "Mixtral-Latest": "mixtral:latest",
-        }
+        super().__init__(logger)
         # Set default model
         self.model = "llama3.1:70b"
-
-    def set_api_key(self, url: str):
-        if url:
-            self.url = url
-        else:
-            raise Exception("No URL provided.")
 
     def get_response(self, prompt: str) -> str:
         payload = {
@@ -153,7 +170,7 @@ class FAPSLLMClient(LLMClient):
             "stream": False,
         }
         self.logger.debug(f'Prompting LLM with "{prompt}"')
-        response = requests.post(self.url + "/api/generate", json=payload)
+        response = requests.post(self.secret + "/api/generate", json=payload)
         if response.status_code == 200:
             result = response.json()["response"]
             self.logger.debug(f'Received LLM response: "{result}"')
@@ -163,20 +180,28 @@ class FAPSLLMClient(LLMClient):
 
 
 class OpenAILLMClient(LLMClient):
+    
+    available_models = {
+        "GPT 4o": "gpt-4o",
+        "GPT 4o mini": "gpt-4o-mini",
+        "GPT 4 turbo": "gpt-4-turbo",
+        "GPT 3.5 turbo": "gpt-3.5-turbo",
+    }
+    
+    secret_name = 'OpenAI API key'
+    
     def __init__(self, logger: logging.Logger):
-        self.logger = logger
-        self.available_models = {
-            "GPT 4o": "gpt-4o",
-            "GPT 4o mini": "gpt-4o-mini",
-            "GPT 4 turbo": "gpt-4-turbo",
-            "GPT 3.5 turbo": "gpt-3.5-turbo",
-        }
+        super().__init__(logger)
+        self.client: openai.OpenAI = None
 
-    def set_api_key(self, api_key: str):
-        self.api_key = api_key
-        self.client = openai.OpenAI(api_key=self.api_key)
+    def set_secret(self, secret: str):
+        self.secret = secret
+        self.client = openai.OpenAI(api_key=self.secret)
 
     def get_response(self, prompt: str) -> str:
+        if not self.client:
+            raise Exception('API key not provided.')
+            
         self.logger.debug(f'Prompting LLM with "{prompt}"')
         completion = self.client.chat.completions.create(
             model=self.model,

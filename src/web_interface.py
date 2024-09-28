@@ -1,8 +1,11 @@
+import logging
 import streamlit as st
 import streamlit.components.v1 as compenents
-from generators.ieappgenerator import IEAppGenerator
-
-import logging
+from appgenerator.ieappgenerator import IEAppGenerator
+from appgenerator.app_generator import AppGenerator
+from appgenerator.llm_client import *
+from appgenerator.generation_instance import GenerationInstance, AppArchitecture
+from app_previewer import *
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -14,69 +17,55 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
 
-generator = IEAppGenerator(logger)
-
-# st.set_page_config(page_title=None, page_icon=None, layout="wide", initial_sidebar_state="auto", menu_items=None)
-# panel_generator, panel_app = st.columns([1, 1])
-
 st.title("Industrial Edge Application Generator")
-
-# LLM Selection
 st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
-source_options = ["FAPS LLM", "Workstation LLM", "Siemens LLM", "ChatGPT"]
-source = st.radio("Select LLM source", source_options, horizontal=True)
 
-# Select model
-generator.select_llm_client(source)
-model_name = st.selectbox(
-    "Please choose an LLM Model",
-    list(generator.llm_client.available_models.keys()),
-)
-generator.llm_client.select_model(model_name)
+with st.expander('LLM Configuration'):
+    # LLM Selection
+    llm_sources: Dict[str, LLMClient] = {
+        'FAPS LLM' : FAPSLLMClient(logger),
+        'Workstation LLM' : WorkstationLLMClient(logger),
+        'Siemens LLM' : SiemensLLMClient(logger),
+        'ChatGPT' : OpenAILLMClient(logger)
+    }
+    llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
+    llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
 
-# Input API Key
-if source == "Siemens LLM":
-    api_key = st.text_input("Enter your Siemens API key", type="password")
-    if api_key:
-        generator.llm_client.set_api_key(api_key)
-    else:
-        st.warning("Please enter your Siemens API key.")
-elif source == "FAPS LLM":
-    url = st.text_input("Enter the URL to the LLM", type="default")
-    if url:
-        generator.llm_client.set_api_key(url)
-    else:
-        st.warning("Please enter the URL to the FAPS LLM.")
-elif source == "ChatGPT":
-    api_key = st.text_input("Enter your ChatGPT API key", type="password")
-    if api_key:
-        generator.llm_client.set_api_key(api_key)
-    else:
-        st.warning("Please enter your ChatGPT API key.")
+    # Input secret
+    if llm_client.secret_name:
+        secret = st.text_input(f'Please enter your {llm_client.secret_name}', type="password").strip()
+        if secret:
+            llm_client.set_secret(secret)
+        else:
+            st.warning(f'Please enter your {llm_client.secret_name}.')
+        
+st.markdown('### Industrial Edge App Details')
 
-# Prompt input
-prompt = st.text_area("Describe the Industrial Edge App you want to create:")
+app_name = st.text_input('App name', value='My IE App').strip()
+use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400)
 
-# Generate code
-if "code" not in st.session_state:
-    st.session_state.code = ""
+if 'generated_app' not in st.session_state:
+    st.session_state['generated_app'] = None
 
 if st.button("Generate Code"):
-    if prompt:
+    if llm_client.secret_name and not llm_client.secret:
+        st.warning('Please configure an LLM to generate your app.')
+    elif not app_name:
+        st.warning("Please enter an app name.")
+    elif not use_case_description:
+        st.warning("Please enter a use case description.")
+    else:
+        app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
         with st.spinner("Generating code..."):
             try:
-                st.session_state.code = generator.run_pipeline(prompt)
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-    else:
-        st.warning("Please enter a prompt.")
+                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description)
+                st.info('App successfully generated.')
+            except BadLLMResponseError:
+                st.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
-
-st.divider()
-
-
-if st.button("After app is generated"):
-    compenents.iframe("http://localhost:8080", height=800)
-    # os.system("python3 -m ~/dist/my_ie_app/program/src/server.py")
+if st.session_state['generated_app']:
+    if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
+        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
+            start_preview(st.session_state['generated_app'])

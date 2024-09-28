@@ -4,9 +4,8 @@ import tempfile
 import sys
 import subprocess
 import streamlit as st
-from .promptadapter import StreamlitAppPromptAdapter
+from .util.promptadapter import StreamlitAppPromptAdapter
 import logging
-
 
 class StreamlitAppGenerator(AppGenerator):
     def __init__(
@@ -19,7 +18,7 @@ class StreamlitAppGenerator(AppGenerator):
         super().__init__(logger, app_name, llm_model, api_key)
         self.prompt_adapter = StreamlitAppPromptAdapter()
 
-    def run_pipeline(self, prompt):
+    def generate_app(self, prompt):
         """Generate code using the selected LLM client."""
         self.prompt_adapter.update_user_prompt(prompt)
         return self.llm_client.get_response(self.prompt_adapter.app_prompt())
