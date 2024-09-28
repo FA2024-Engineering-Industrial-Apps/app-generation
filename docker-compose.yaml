@@ -4,12 +4,12 @@ services:
   app-generator:
     container_name: app-generator
     build:
-      context: ./web-app
+      context: .
     restart: always
     ports:
+      - "8080:8080"  # Map the host port to the container port
       - "8501:8501"  # Map the host port to the container port
     volumes:
-      - ./volume:/usr/src/volume  # Mount backend code directory
       - /var/run/docker.sock:/var/run/docker.sock  # Access Docker Engine from the container
     environment:
       - DOCKER_HOST=http://127.0.0.1:2376 # Connect to the Docker Engine (modify as necessary)
