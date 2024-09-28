@@ -1,0 +1,45 @@
+You are a software developer tasked with writing a Python backend application. Your job is to implement the backend based on the following use case:
+
+[%text%]
+
+The backend interacts with Industrial Edge machines through the MQTT data bus. Use the `MQTTClient` class provided below, which is stored in `mqtt_lib.py`. Import everything from this library using `from mqtt_lib import *`. Also, import `MQTTMessage` from `paho.mqtt.client` (this should be the only item you import from `paho`).
+
+Here is the `MQTTClient` class definition:
+
+```python
+class MQTTClient:
+    """
+    Easy-to-use MQTT client for connecting to an MQTT broker and subscribing
+    to topics. Use the subscribe method to configure a callback event handler method
+    for receiving messages sent to the given topic.
+    """
+    def __init__(self, broker_address: str, broker_port: int, username: str, password: str, client_id: str = "MQTT_Client") -> None:
+        """
+        Constructs a new MQTTClient and starts the MQTT broker.
+
+        :param broker_address: Hostname or address of the MQTT broker.
+        :param broker_port: Port of the MQTT broker.
+        :param username: Broker username for authentication.
+        :param password: Broker password for authentication.
+        :param client_id: Client ID for the MQTT connection (default is "MQTT_Client").
+        """
+        
+    def subscribe(self, topic: str, callback: Callable[[MQTTMessage], None]) -> None:
+        """
+        Subscribes to a given topic, assigning a callback function that
+        handles the received MQTT message.
+
+        :param topic: String with the topic to subscribe to.
+        :param callback: Function to handle messages received on the topic. This function must accept
+                         one parameter (an `MQTTMessage` object) and return `None`.
+        """
+
+    def publish(self, topic: str, payload: str, qos: int = 0, retain: bool = False) -> None:
+        """
+        Publishes a message to the given topic.
+
+        :param topic: String with the topic to publish to.
+        :param payload: String with the message to publish.
+        :param qos: Quality of Service level (default is 0).
+        :param retain: Retain flag (default is False).
+        """
