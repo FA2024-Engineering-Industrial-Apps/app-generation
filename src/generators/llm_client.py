@@ -2,7 +2,11 @@ import requests
 from abc import ABC, abstractmethod
 import logging
 import openai
+from typing import Callable, Any
 
+class BadLLMResponseError(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 # Base class for LLM clients
 class LLMClient(ABC):
@@ -18,8 +22,30 @@ class LLMClient(ABC):
     @abstractmethod
     def get_response(self, prompt: str) -> str:
         pass
-
-
+    
+    def get_validated_response(self, prompt: str, validator: Callable[[str], Any], tries=3) -> Any:
+        """
+        Prompts the LLM and calls the validator method. Retries the prompt if the validator raises
+        a BadLLMResponseError.
+        
+        @param prompt: Prompt to send to the LLM.
+        @param validator: Function with arbitrary return value. Should raise a BadLLMResponseError if validation failed.
+        @param tries: Maximum number of attempts before the error is propagated.
+        @return: Return value of the validator function if it does not raise an exception.
+        """
+        attempt: int = 1
+        succeeded: bool = False
+        result: Any
+        while (not succeeded) and (attempt <= tries):
+            try:
+                result = validator(self.get_response(prompt))
+                succeeded = True
+            except BadLLMResponseError:
+                if attempt == tries:
+                    raise
+        
+        return result
+        
 # Siemens LLM client
 class SiemensLLMClient(LLMClient):
     def __init__(self, logger: logging.Logger):
@@ -142,8 +168,6 @@ class OpenAILLMClient(LLMClient):
             "GPT 4 turbo" : "gpt-4-turbo",
             "GPT 3.5 turbo": "gpt-3.5-turbo"
         }
-        # set default model
-        self.model = model
 
     def set_api_key(self, api_key: str):
         self.api_key = api_key
@@ -151,13 +175,12 @@ class OpenAILLMClient(LLMClient):
 
     def get_response(self, prompt: str) -> str:
         self.logger.debug(f'Prompting LLM with "{prompt}"')
-        response = self.client.chat.completions.create(
-            model=self.model,
+        completion = self.client.chat.completions.create(
+                model=self.model,
             messages=[{"role": "user", "content": prompt}],
+            stream=False
         )
-        if response.status_code == 200:
-            result = response["choices"][0]["message"]["content"].strip()
-            self.logger.debug(f'Received LLM response: "{result}"')
-            return result
-        else:
-            raise Exception(f"Failed with status code: {response.status_code}")
+        
+        result = completion.choices[0].message.content
+        self.logger.debug(f'Received LLM response: "{result}"')
+        return result
