@@ -264,8 +264,7 @@ class IEAppGenerator(AppGenerator):
             encoding="utf8"
         ) as file:
             file.write(script_js_text)
-            
-
+        
     def _split_architecture_description(self) -> None:
         """
         Splits the architecture description into frontend and backend parts.
@@ -540,7 +539,8 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Done!')
+        if progress_callback: 
+            progress_callback(1, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
