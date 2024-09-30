@@ -28,12 +28,13 @@ st.markdown(
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
+        'ChatGPT' : OpenAILLMClient(logger),
         'FAPS LLM' : FAPSLLMClient(logger),
         'Workstation LLM' : WorkstationLLMClient(logger),
-        'Siemens LLM' : SiemensLLMClient(logger),
-        'ChatGPT' : OpenAILLMClient(logger)
+        'Siemens LLM' : SiemensLLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
+    st.caption('For best performance it is highly recommended to use the GPT-4o model from OpenAI.')
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
 
     # Input secret
