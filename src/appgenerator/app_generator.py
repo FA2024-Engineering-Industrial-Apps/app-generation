@@ -265,6 +265,18 @@ class IEAppGenerator(AppGenerator):
         ) as file:
             file.write(script_js_text)
             
+    def _generate_web_interface_for_frontend_only(self, code_validator: Callable[[str], str]) -> None:
+        prompt = self.prompt_fetcher.fetch(
+            "generate_web_interface_f",
+            self.app.artifacts["use_case"],
+        )
+        
+        (index_html_text, styles_css_text, script_js_text) = (self.llm_client.get_validated_response(prompt, code_validator, config.PROMPT_RERUN_LIMIT))
+        
+        
+    def _generate_web_interface_for_frontend_and_backend(self, code_validator: Callable[[str], str]) -> None:
+        pass
+            
 
     def _split_architecture_description(self) -> None:
         """
