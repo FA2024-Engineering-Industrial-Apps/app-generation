@@ -458,7 +458,7 @@ class IEAppGenerator(AppGenerator):
         """
         Configures the docker-compose.yml file for the generated application.
         """
-        dst_file = os.path.join(self.app.root_path, "docker_compose.yml")
+        dst_file = os.path.join(self.app.root_path, "docker-compose.yml")
         self.file_copier.copy_and_insert(
             config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
