@@ -13,7 +13,7 @@ import os
 from .util.promptfetcher import PromptFetcher
 from .util.filecopier import FileCopier
 from .util.extractor import extract_imports_from_directory, extract_code
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Callable
 import traceback
 from . import config
 import shutil
@@ -43,12 +43,21 @@ class AppGenerator(ABC):
         self.llm_client: LLMClient = llm_client
         
 
-    def generate_app(self, app_name: str, use_case_description: str) -> GenerationInstance:
+    def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
         """
         Generates an application based on the provided app name and use case description.
 
+        This method generates a new application using the LLM based on the provided use case description
+        and application name. It also reports the progress of the generation process by invoking the
+        `progress_callback` function at each step.
+
         @param app_name: The name of the application to generate.
-        @param use_case_description: Description of the application's use case.
+        @param use_case_description: A description of the application's use case.
+        @param progress_callback: A callback function to report progress during generation. The callback
+            receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
 
         @return: A GenerationInstance representing the generated application.
         """
@@ -138,10 +147,17 @@ class IEAppGenerator(AppGenerator):
 
         Fetches a task distribution prompt and updates the application artifacts with the architecture description.
         """
-        architecture_description = self.llm_client.get_response(
+        def validator(response: str) -> str:
+            if len(response.split(config.FRONTEND_FILE_SEPARATOR_STRING)) != 2:
+                raise BadLLMResponseError('LLM failed to return task distribution in correct format.')
+            return response
+        
+        architecture_description = self.llm_client.get_validated_response(
             self.prompt_fetcher.fetch(
                 "define_task_distribution", self.app.artifacts["use_case"]
-            )
+            ),
+            validator,
+            config.PROMPT_RERUN_LIMIT
         )
         self.app.artifacts.update({"architecture_description": architecture_description})
         
@@ -455,64 +471,121 @@ class IEAppGenerator(AppGenerator):
             os.makedirs(os.path.join(self.app.root_path, folder), exist_ok=True)
             
 
-    def _generate_frontend_and_backend(self) -> None:
+    def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
-        Generates both frontend and backend for the application.
+        Generates both the frontend and backend for the application.
 
         This method sets the architecture to frontend-and-backend and triggers the generation of both.
+        If a `progress_callback` is provided, it reports the progress of the generation process.
+
+        @param progress_callback: An optional callback function to report progress during the generation process.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
         """
+        total_llm_tasks: int = 7
+        
         self.app.architecture = AppArchitecture.FRONTEND_AND_BACKEND
         self._create_app_folder_structure(AppArchitecture.FRONTEND_AND_BACKEND)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Defining app architecture...')
         self._define_task_distribution()
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Defining RESTful API endpoints...')
         self._define_restful_api()
+        
         self._split_architecture_description()
+        
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Defining backend app interface...')
         self._define_backend_app_interface()
+        if progress_callback: progress_callback(3, total_llm_tasks, 'Generating backend HTTP server...')
         self._generate_backend_http_server()
+        if progress_callback: progress_callback(4, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_AND_BACKEND)
+        if progress_callback: progress_callback(5, total_llm_tasks, 'Generating backend app...')
         self._generate_backend_app(AppArchitecture.FRONTEND_AND_BACKEND)
         self._package_backend_application(AppArchitecture.FRONTEND_AND_BACKEND)
 
         self._package_dockerfile(AppArchitecture.FRONTEND_AND_BACKEND)
+        if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(7, total_llm_tasks, 'Done!')
         
 
-    def _generate_only_frontend(self) -> None:
+    def _generate_only_frontend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
         Generates only the frontend for the application.
 
         This method sets the architecture to frontend-only and triggers the frontend generation.
+        If a `progress_callback` is provided, it reports the progress of the frontend generation process.
+
+        @param progress_callback: An optional callback function to report progress during frontend generation.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
         """
+        total_llm_tasks: int = 1
+        
         self.app.architecture = AppArchitecture.FRONTEND_ONLY
         self._create_app_folder_structure(AppArchitecture.FRONTEND_ONLY)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Done!')
         
 
-    def _generate_only_backend(self) -> None:
+    def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
         Generates only the backend for the application.
 
         This method sets the architecture to backend-only and triggers the backend generation.
+        If a `progress_callback` is provided, it reports the progress of the backend generation process.
+
+        @param progress_callback: An optional callback function to report progress during backend generation.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
         """
+        total_llm_tasks: int = 2
+        
         self.app.architecture = AppArchitecture.BACKEND_ONLY
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Generating app...')
         self._generate_backend_app(AppArchitecture.BACKEND_ONLY)
         self._package_backend_application(AppArchitecture.BACKEND_ONLY)
         self._package_dockerfile(AppArchitecture.BACKEND_ONLY)
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
 
-    def generate_app(self, app_name: str, use_case_description: str) -> GenerationInstance:
+    def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
         """
-        Runs the IEAppGenerator pipeline to generate an application based on the use case description.
+        Generates an application based on the provided app name and use case description.
+
+        This method generates a new application using the LLM based on the provided use case description
+        and application name. It also reports the progress of the generation process by invoking the
+        `progress_callback` function at each step.
 
         @param app_name: The name of the application to generate.
-        @param use_case_description: The description of the application's use case.
+        @param use_case_description: A description of the application's use case.
+        @param progress_callback: A callback function to report progress during generation. The callback
+            receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
 
-        @return: A GenerationInstance object representing the generated application.
+        @return: A GenerationInstance representing the generated application.
         """
         self.logger.info("Running IEAppGenerator pipeline...")
         self.app: GenerationInstance = GenerationInstance(app_name)
@@ -539,7 +612,7 @@ class IEAppGenerator(AppGenerator):
                 )
                 .lower()
                 .strip()
-            ]()
+            ](progress_callback)
         except Exception:
             print(traceback.format_exc())
             raise

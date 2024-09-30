@@ -52,6 +52,7 @@ if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
 
 if st.button("Generate Code"):
+    st.session_state['generated_app'] = None
     if llm_client.secret_name and not llm_client.secret:
         st.warning('Please configure an LLM to generate your app.')
     elif not app_name:
@@ -60,12 +61,16 @@ if st.button("Generate Code"):
         st.warning("Please enter a use case description.")
     else:
         app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
-        with st.spinner("Generating code..."):
-            try:
-                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description)
-                st.info('App successfully generated.')
-            except BadLLMResponseError:
-                st.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
+        progress_indication = st.progress(0, 'Generating app...')
+        
+        def update_progress(steps_done: int, total_steps: int, current_step: str) -> None:
+            progress_indication.progress(value=steps_done/total_steps, text=f'({steps_done + 1}/{total_steps + 1}) {current_step}')
+            
+        try:
+            st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description, update_progress)
+            progress_indication.info('App successfully generated.')
+        except BadLLMResponseError:
+            progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
     if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
