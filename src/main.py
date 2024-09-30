@@ -5,9 +5,8 @@ import streamlit.components.v1 as compenents
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
-
-# TODO: 
 from app_previewer import *
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -19,6 +18,8 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
 
+st.set_page_config(page_title='IE App Generator')
+
 st.title("Industrial Edge Application Generator")
 st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
@@ -27,12 +28,13 @@ st.markdown(
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
+        'ChatGPT' : OpenAILLMClient(logger),
         'FAPS LLM' : FAPSLLMClient(logger),
         'Workstation LLM' : WorkstationLLMClient(logger),
-        'Siemens LLM' : SiemensLLMClient(logger),
-        'ChatGPT' : OpenAILLMClient(logger)
+        'Siemens LLM' : SiemensLLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
+    st.caption('For best performance it is highly recommended to use the GPT-4o model from OpenAI.')
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
 
     # Input secret
