@@ -5,6 +5,7 @@ import streamlit.components.v1 as compenents
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
+from lint_artifacts import run_pylint_on_artifacts
 
 # TODO: 
 from app_previewer import *
@@ -71,3 +72,5 @@ if st.session_state['generated_app']:
     if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
         if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
             start_preview(st.session_state['generated_app'])
+            run_pylint_on_artifacts()
+            st.success("Linting completed. Check artifacts/lint_logs for details.")
