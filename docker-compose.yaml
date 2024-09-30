@@ -8,6 +8,7 @@ services:
       - "2375:2375"    # Exposing Docker API (optional, use with caution)
     environment:
       DOCKER_TLS_CERTDIR: ""  # Disable TLS for local development
+
   app-generator:
     container_name: app-generator
     build:
@@ -21,4 +22,3 @@ services:
       - .:/usr/app
     environment:
       - DOCKER_HOST=http://127.0.0.1:2376 # Connect to the Docker Engine (modify as necessary)
-
