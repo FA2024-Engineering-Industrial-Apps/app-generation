@@ -315,19 +315,19 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_http_server_code": backend_http_server_code})
-        self.app.code_artifacts.update({"server.py": backend_http_server_code})
-        self.app.file_list.append("server.py")
+        #self.app.code_artifacts.update({"server.py": backend_http_server_code})
+        #self.app.file_list.append("server.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
-                "server.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_http_server_code)
+        #with open(
+        #    os.path.join(
+        #        self.app.root_path,
+        #        config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
+        #        "server.py",
+        #    ),
+        #    "w",
+        #    encoding="utf8"
+        #) as file:
+        #    file.write(backend_http_server_code)
             
 
     def _generate_backend_app(self, architecture: AppArchitecture) -> None:
@@ -354,19 +354,20 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_app_code": backend_app_code})
-        self.app.code_artifacts.update({"backend.py": backend_app_code})
-        self.app.file_list.append("backend.py")
+        if architecture == AppArchitecture.BACKEND_ONLY:
+            self.app.code_artifacts.update({"backend.py": backend_app_code})
+            self.app.file_list.append("backend.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
-                "backend.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_app_code)
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "backend.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(backend_app_code)
             
 
     def _package_backend_application(self, architecture: AppArchitecture) -> None:
@@ -383,6 +384,21 @@ class IEAppGenerator(AppGenerator):
                 "mqtt_lib.py",
             ),
         )
+        
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
+            combined_code = self.app.artifacts["backend_app_code"] + "\n\n" + self.app.artifacts["backend_http_server_code"]
+            self.app.code_artifacts.update({"main.py": combined_code})
+            self.app.file_list.append("main.py")
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "main.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(combined_code)
         
 
     def _package_dockerfile(self, architecture: AppArchitecture) -> None:
