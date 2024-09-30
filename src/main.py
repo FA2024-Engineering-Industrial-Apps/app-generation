@@ -5,9 +5,8 @@ import streamlit.components.v1 as compenents
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
-
-# TODO: 
 from app_previewer import *
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -18,6 +17,8 @@ logging.basicConfig(
     format="[%(asctime)s][%(levelname)s] %(message)s",
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
+
+st.set_page_config(page_title='IE App Generator')
 
 st.title("Industrial Edge Application Generator")
 st.markdown(
