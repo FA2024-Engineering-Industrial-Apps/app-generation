@@ -356,14 +356,14 @@ class IEAppGenerator(AppGenerator):
 
         self.app.artifacts.update({"backend_app_code": backend_app_code})
         if architecture == AppArchitecture.BACKEND_ONLY:
-            self.app.code_artifacts.update({"backend.py": backend_app_code})
-            self.app.file_list.append("backend.py")
+            self.app.code_artifacts.update({"main.py": backend_app_code})
+            self.app.file_list.append("main.py")
 
             with open(
                 os.path.join(
                     self.app.root_path,
                     config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
-                    "backend.py",
+                    "main.py",
                 ),
                 "w",
                 encoding="utf8"
