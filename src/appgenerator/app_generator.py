@@ -20,6 +20,7 @@ import shutil
 import logging
 from .llm_client import BadLLMResponseError, LLMClient
 from .generation_instance import GenerationInstance, AppArchitecture
+import compileall
 
 
 # Base class for LLM clients
@@ -471,7 +472,35 @@ class IEAppGenerator(AppGenerator):
         self._ensure_empty_folder(self.app.root_path)
         for folder in config.IE_APP_FOLDER_STRUCTURE[architecture.value].values():
             os.makedirs(os.path.join(self.app.root_path, folder), exist_ok=True)
+        
             
+    def _generate_validated_backend(self, architecture: AppArchitecture, max_tries: int) -> None:
+        """
+        Generates and validates the backend for the application by attempting multiple retries.
+
+        This method generates the backend application and packages it for the specified architecture.
+        It repeatedly tries to compile the generated backend code until it is syntactically correct or the
+        maximum number of attempts is reached. If the code fails to compile within the allowed attempts, 
+        an error is logged and an exception is raised.
+
+        @param architecture: The architecture type for which the backend is being generated (frontend-and-backend or backend-only).
+        @param max_tries: The maximum number of attempts to try generating syntactically correct code.
+
+        @raise BadLLMResponseError: If the LLM fails to generate syntactically correct Python code after the maximum number of attempts.
+        """
+        correct: bool = False
+        attempt:int = 0
+        
+        while not correct and attempt < max_tries:
+            self._generate_backend_app(architecture)
+            self._package_backend_application(architecture)
+            correct = compileall.compile_dir(dir=os.path.join(self.app.root_path, config.IE_APP_FOLDER_STRUCTURE[architecture.value]['source']), quiet=True)
+            if not correct: self.logger.warning('LLM generated syntactically incorrect Python code.')
+            attempt = attempt + 1
+            
+        if not correct:
+            self.logger.error('LLM failed to generate syntactically correct Python code.')
+            raise BadLLMResponseError('LLM failed to generate syntactically correct Python code.')
 
     def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
@@ -506,8 +535,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(4, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(5, total_llm_tasks, 'Generating backend app...')
-        self._generate_backend_app(AppArchitecture.FRONTEND_AND_BACKEND)
-        self._package_backend_application(AppArchitecture.FRONTEND_AND_BACKEND)
+        self._generate_validated_backend(AppArchitecture.FRONTEND_AND_BACKEND, config.PROMPT_RERUN_LIMIT)
 
         self._package_dockerfile(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
@@ -563,8 +591,7 @@ class IEAppGenerator(AppGenerator):
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
         
         if progress_callback: progress_callback(0, total_llm_tasks, 'Generating app...')
-        self._generate_backend_app(AppArchitecture.BACKEND_ONLY)
-        self._package_backend_application(AppArchitecture.BACKEND_ONLY)
+        self._generate_validated_backend(AppArchitecture.BACKEND_ONLY, config.PROMPT_RERUN_LIMIT)
         self._package_dockerfile(AppArchitecture.BACKEND_ONLY)
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
