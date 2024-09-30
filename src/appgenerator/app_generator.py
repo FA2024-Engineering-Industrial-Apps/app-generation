@@ -397,7 +397,10 @@ class IEAppGenerator(AppGenerator):
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
-        self.file_copier.copy_and_insert("Dockerfile", dst_file, {})
+        if architecture == AppArchitecture.FRONTEND_ONLY:
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+        else:
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
         self.app.file_list.append("Dockerfile")
         
 
@@ -440,7 +443,7 @@ class IEAppGenerator(AppGenerator):
         """
         dst_file = os.path.join(self.app.root_path, "docker_compose.yml")
         self.file_copier.copy_and_insert(
-            "docker-compose.yml",
+            config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
             {"image_name": self.app.name.replace(" ", "_")},
         )

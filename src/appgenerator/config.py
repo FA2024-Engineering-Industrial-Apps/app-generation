@@ -25,3 +25,7 @@ IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
     }
 LOG_FOLDER : str = os.path.join('artifacts', 'logs')
 PROMPT_RERUN_LIMIT: int = 5
+
+PYTHON_DOCKERFILE_TEMPLATE_NAME: str = 'Dockerfile_python.template'
+NGINX_DOCKERFILE_TEMPLATE_NAME: str = 'Dockerfile_nginx.template'
+DOCKER_COMPOSE_TEMPLATE_NAME: str = 'docker_compose.yml.template'
