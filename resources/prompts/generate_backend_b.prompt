@@ -43,3 +43,7 @@ class MQTTClient:
         :param qos: Quality of Service level (default is 0).
         :param retain: Retain flag (default is False).
         """
+
+Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
+
+If any details are unclear, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials.
