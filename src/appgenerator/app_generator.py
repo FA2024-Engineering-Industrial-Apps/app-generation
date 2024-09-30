@@ -20,6 +20,7 @@ import shutil
 import logging
 from .llm_client import BadLLMResponseError, LLMClient
 from .generation_instance import GenerationInstance, AppArchitecture
+import compileall
 
 
 # Base class for LLM clients
@@ -264,8 +265,7 @@ class IEAppGenerator(AppGenerator):
             encoding="utf8"
         ) as file:
             file.write(script_js_text)
-            
-
+        
     def _split_architecture_description(self) -> None:
         """
         Splits the architecture description into frontend and backend parts.
@@ -316,19 +316,19 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_http_server_code": backend_http_server_code})
-        self.app.code_artifacts.update({"server.py": backend_http_server_code})
-        self.app.file_list.append("server.py")
+        #self.app.code_artifacts.update({"server.py": backend_http_server_code})
+        #self.app.file_list.append("server.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
-                "server.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_http_server_code)
+        #with open(
+        #    os.path.join(
+        #        self.app.root_path,
+        #        config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
+        #        "server.py",
+        #    ),
+        #    "w",
+        #    encoding="utf8"
+        #) as file:
+        #    file.write(backend_http_server_code)
             
 
     def _generate_backend_app(self, architecture: AppArchitecture) -> None:
@@ -355,19 +355,20 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_app_code": backend_app_code})
-        self.app.code_artifacts.update({"backend.py": backend_app_code})
-        self.app.file_list.append("backend.py")
+        if architecture == AppArchitecture.BACKEND_ONLY:
+            self.app.code_artifacts.update({"main.py": backend_app_code})
+            self.app.file_list.append("main.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
-                "backend.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_app_code)
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "main.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(backend_app_code)
             
 
     def _package_backend_application(self, architecture: AppArchitecture) -> None:
@@ -385,6 +386,21 @@ class IEAppGenerator(AppGenerator):
             ),
         )
         
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
+            combined_code = self.app.artifacts["backend_app_code"] + "\n\n" + self.app.artifacts["backend_http_server_code"]
+            self.app.code_artifacts.update({"main.py": combined_code})
+            self.app.file_list.append("main.py")
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "main.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(combined_code)
+        
 
     def _package_dockerfile(self, architecture: AppArchitecture) -> None:
         """
@@ -397,7 +413,10 @@ class IEAppGenerator(AppGenerator):
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
-        self.file_copier.copy_and_insert("Dockerfile", dst_file, {})
+        if architecture == AppArchitecture.FRONTEND_ONLY:
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+        else:
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
         self.app.file_list.append("Dockerfile")
         
 
@@ -440,7 +459,7 @@ class IEAppGenerator(AppGenerator):
         """
         dst_file = os.path.join(self.app.root_path, "docker_compose.yml")
         self.file_copier.copy_and_insert(
-            "docker-compose.yml",
+            config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
             {"image_name": self.app.name.replace(" ", "_")},
         )
@@ -469,7 +488,35 @@ class IEAppGenerator(AppGenerator):
         self._ensure_empty_folder(self.app.root_path)
         for folder in config.IE_APP_FOLDER_STRUCTURE[architecture.value].values():
             os.makedirs(os.path.join(self.app.root_path, folder), exist_ok=True)
+        
             
+    def _generate_validated_backend(self, architecture: AppArchitecture, max_tries: int) -> None:
+        """
+        Generates and validates the backend for the application by attempting multiple retries.
+
+        This method generates the backend application and packages it for the specified architecture.
+        It repeatedly tries to compile the generated backend code until it is syntactically correct or the
+        maximum number of attempts is reached. If the code fails to compile within the allowed attempts, 
+        an error is logged and an exception is raised.
+
+        @param architecture: The architecture type for which the backend is being generated (frontend-and-backend or backend-only).
+        @param max_tries: The maximum number of attempts to try generating syntactically correct code.
+
+        @raise BadLLMResponseError: If the LLM fails to generate syntactically correct Python code after the maximum number of attempts.
+        """
+        correct: bool = False
+        attempt:int = 0
+        
+        while not correct and attempt < max_tries:
+            self._generate_backend_app(architecture)
+            self._package_backend_application(architecture)
+            correct = compileall.compile_dir(dir=os.path.join(self.app.root_path, config.IE_APP_FOLDER_STRUCTURE[architecture.value]['source']), quiet=True)
+            if not correct: self.logger.warning('LLM generated syntactically incorrect Python code.')
+            attempt = attempt + 1
+            
+        if not correct:
+            self.logger.error('LLM failed to generate syntactically correct Python code.')
+            raise BadLLMResponseError('LLM failed to generate syntactically correct Python code.')
 
     def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
@@ -504,8 +551,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(4, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(5, total_llm_tasks, 'Generating backend app...')
-        self._generate_backend_app(AppArchitecture.FRONTEND_AND_BACKEND)
-        self._package_backend_application(AppArchitecture.FRONTEND_AND_BACKEND)
+        self._generate_validated_backend(AppArchitecture.FRONTEND_AND_BACKEND, config.PROMPT_RERUN_LIMIT)
 
         self._package_dockerfile(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
@@ -537,7 +583,8 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Done!')
+        if progress_callback: 
+            progress_callback(1, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
@@ -560,8 +607,7 @@ class IEAppGenerator(AppGenerator):
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
         
         if progress_callback: progress_callback(0, total_llm_tasks, 'Generating app...')
-        self._generate_backend_app(AppArchitecture.BACKEND_ONLY)
-        self._package_backend_application(AppArchitecture.BACKEND_ONLY)
+        self._generate_validated_backend(AppArchitecture.BACKEND_ONLY, config.PROMPT_RERUN_LIMIT)
         self._package_dockerfile(AppArchitecture.BACKEND_ONLY)
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)

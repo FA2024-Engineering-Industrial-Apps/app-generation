@@ -17,4 +17,4 @@ EXPOSE 5000
 ENV PYTHONUNBUFFERED=1
 
 # Run the main script when the container starts
-CMD ["python", "./src/backend.py"]
+CMD ["python", "./src/main.py"]
