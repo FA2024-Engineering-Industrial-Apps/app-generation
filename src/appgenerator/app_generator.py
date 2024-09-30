@@ -264,8 +264,7 @@ class IEAppGenerator(AppGenerator):
             encoding="utf8"
         ) as file:
             file.write(script_js_text)
-            
-
+        
     def _split_architecture_description(self) -> None:
         """
         Splits the architecture description into frontend and backend parts.
@@ -397,7 +396,10 @@ class IEAppGenerator(AppGenerator):
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
-        self.file_copier.copy_and_insert("Dockerfile", dst_file, {})
+        if architecture == AppArchitecture.FRONTEND_ONLY:
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+        else:
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
         self.app.file_list.append("Dockerfile")
         
 
@@ -440,7 +442,7 @@ class IEAppGenerator(AppGenerator):
         """
         dst_file = os.path.join(self.app.root_path, "docker_compose.yml")
         self.file_copier.copy_and_insert(
-            "docker-compose.yml",
+            config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
             {"image_name": self.app.name.replace(" ", "_")},
         )
@@ -537,7 +539,8 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Done!')
+        if progress_callback: 
+            progress_callback(1, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
