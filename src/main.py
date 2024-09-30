@@ -1,11 +1,11 @@
 import logging
 import streamlit as st
-import streamlit.components.v1 as compenents
+import streamlit.components.v1 as components  # Fixing the typo in 'components'
 
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
-from lint_artifacts import run_pylint_on_artifacts
+from lint_artifacts import run_pylint_on_artifacts  # Importing the linting function
 
 # TODO: 
 from app_previewer import *
@@ -28,10 +28,10 @@ st.markdown(
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
-        'FAPS LLM' : FAPSLLMClient(logger),
-        'Workstation LLM' : WorkstationLLMClient(logger),
-        'Siemens LLM' : SiemensLLMClient(logger),
-        'ChatGPT' : OpenAILLMClient(logger)
+        'FAPS LLM': FAPSLLMClient(logger),
+        'Workstation LLM': WorkstationLLMClient(logger),
+        'Siemens LLM': SiemensLLMClient(logger),
+        'ChatGPT': OpenAILLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
@@ -64,13 +64,12 @@ if st.button("Generate Code"):
         with st.spinner("Generating code..."):
             try:
                 st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description)
+                run_pylint_on_artifacts()  # Run the linting function after starting the preview
                 st.info('App successfully generated.')
             except BadLLMResponseError:
                 st.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
     if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
-        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
+        if st.button(label='Preview App Web Interface'):
             start_preview(st.session_state['generated_app'])
-            run_pylint_on_artifacts()
-            st.success("Linting completed. Check artifacts/lint_logs for details.")
