@@ -462,7 +462,7 @@ class IEAppGenerator(AppGenerator):
         self.file_copier.copy_and_insert(
             config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
-            {"image_name": self.app.name.replace(" ", "_")},
+            {"image_name": self.app.name.replace(" ", "_").lower()},
         )
         self.app.file_list.append("docker-compose.yml")
         
