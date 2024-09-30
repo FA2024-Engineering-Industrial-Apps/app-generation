@@ -347,7 +347,7 @@ class IEAppGenerator(AppGenerator):
             )
         else:
             prompt = self.prompt_fetcher.fetch(
-                "generate_backend_b",
+                "generate_backend_for_backend_only",
                 self.app.artifacts["use_case"],
             )
         backend_app_code = self.llm_client.get_validated_response(
