@@ -10,6 +10,7 @@ from logging import Logger
 from .generation_instance import GenerationInstance
 from . import config
 import os
+import re
 from .util.promptfetcher import PromptFetcher
 from .util.filecopier import FileCopier
 from .util.extractor import extract_imports_from_directory, extract_code
@@ -647,6 +648,24 @@ class IEAppGenerator(AppGenerator):
                 raise BadLLMResponseError('LLM response not in ["a", "b", "c"].')
             return response
 
+        def _placeholder_detector(code_artifacts: dict):
+            """Detect if there is placeholder in the code artifact.
+            Args:
+                code_artifacts: A dictionary holding filenames and code as key-value pairs.
+            Returns:
+                bool
+            """
+            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
+            pattern = re.compile(
+                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
+            )
+            matches = []
+            for _, code in code_artifacts.items():
+                match = pattern.search(code)
+                if match:
+                    matches.append(match)
+            return bool(matches)
+
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -654,11 +673,12 @@ class IEAppGenerator(AppGenerator):
                         "determine_necessary_components", use_case_description
                     ),
                     response_validator,
-                    config.PROMPT_RERUN_LIMIT
+                    config.PROMPT_RERUN_LIMIT,
                 )
                 .lower()
                 .strip()
             ](progress_callback)
+            self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
         except Exception:
             print(traceback.format_exc())
             raise

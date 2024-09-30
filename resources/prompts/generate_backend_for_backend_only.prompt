@@ -45,4 +45,6 @@ class MQTTClient:
         :param retain: Retain flag (default is False).
         """
 
-Output only the code formatted in markdown. Do not add any further description or rationale.
+Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
+
+If any details are unclear, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials.

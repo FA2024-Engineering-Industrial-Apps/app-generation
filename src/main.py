@@ -72,7 +72,6 @@ if st.button("Generate Code"):
         except BadLLMResponseError:
             progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
-if st.session_state['generated_app']:
-    if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
-        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
-            start_preview(st.session_state['generated_app'])
+if st.session_state["generated_app"]:
+    if app_generator.app.placeholder_needed:
+        st.warning("Placeholder detected in the generated code.")
