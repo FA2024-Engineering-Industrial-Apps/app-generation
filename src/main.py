@@ -66,31 +66,13 @@ app_name = st.text_input('App name', value=st.session_state["app_name"]).strip()
 use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", value=st.session_state['use_case_description'], height=400)
 
 
-col1, col2 = st.columns([5, 1])
+col1, col2 = st.columns(2)
+generate_code = None
 
 with col1:
-    if st.button("Generate Code"):
-        st.session_state['generated_app'] = None
-        if llm_client.secret_name and not llm_client.secret:
-            st.warning('Please configure an LLM to generate your app.')
-        elif not app_name:
-            st.warning("Please enter an app name.")
-        elif not use_case_description:
-            st.warning("Please enter a use case description.")
-        else:
-            app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
-            progress_indication = st.progress(0, 'Generating app...')
-            
-            def update_progress(steps_done: int, total_steps: int, current_step: str) -> None:
-                progress_indication.progress(value=steps_done/total_steps, text=f'({steps_done + 1}/{total_steps + 1}) {current_step}')
-                
-            try:
-                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description, update_progress)
-                progress_indication.info('App successfully generated.')
-            except BadLLMResponseError:
-                progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
+    generate_code = st.button("Generate Code", use_container_width=True)
 with col2:
-    if st.button("Demo Input"):
+    if st.button("Demo Use Case", use_container_width=True):
         folders = os.listdir(os.path.join('resources', 'demos'))
         choosen_demo = folders[st.session_state['demo_number'] % len(folders)]
         
@@ -99,6 +81,27 @@ with col2:
             st.session_state.use_case_description = f.read()
         st.session_state['demo_number'] += 1
         st.rerun()
+    
+if generate_code:    
+    st.session_state['generated_app'] = None
+    if llm_client.secret_name and not llm_client.secret:
+        st.warning('Please configure an LLM to generate your app.')
+    elif not app_name:
+        st.warning("Please enter an app name.")
+    elif not use_case_description:
+        st.warning("Please enter a use case description.")
+    else:
+        app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
+        progress_indication = st.progress(0, 'Generating app...')
+        
+        def update_progress(steps_done: int, total_steps: int, current_step: str) -> None:
+            progress_indication.progress(value=steps_done/total_steps, text=f'({steps_done + 1}/{total_steps + 1}) {current_step}')
+            
+        try:
+            st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description, update_progress)
+            progress_indication.info('App successfully generated.')
+        except BadLLMResponseError:
+            progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
     generated_app: GenerationInstance = st.session_state['generated_app']
