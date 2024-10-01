@@ -6,9 +6,11 @@ __pycache__/
 settings.json
 preview/
 # Tool for publishing apps into the industrial edge managemeent system
-/publish/iectl
 artifacts/
-publish/ie_workspace
+publish/*
+!publish/!publish-app-container.sh
+
+app.tar
 
 # C extensions
 *.so
