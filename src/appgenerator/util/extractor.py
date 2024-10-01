@@ -1,5 +1,7 @@
 import os
 import re
+import markdown
+from weasyprint import HTML
 
 
 def extract_code(text : str, file_type : str) -> str:
@@ -67,3 +69,95 @@ def extract_imports_from_directory(directory):
                 file_path = os.path.join(root, file)
                 all_imports.update(extract_imports_from_file(file_path))
     return all_imports
+
+def extract_pdf_from_markdown(input_text: str, output_path: str) -> None:
+    # Convert Markdown to HTML
+    html_content = markdown.markdown(input_text, extensions=['fenced_code', 'tables'])
+
+    # Customized CSS with smaller margins and enhanced styling
+    html = f"""
+    <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                @page {{
+                    size: A4;
+                    margin: 0.5in; /* Reduced margin */
+                }}
+                body {{
+                    font-family: Arial, sans-serif;
+                    margin: 0; /* Use @page margin */
+                    font-size: 12pt;
+                    line-height: 1.2;
+                }}
+                h1, h2, h3, h4, h5, h6 {{
+                    margin-top: 1em;
+                    margin-bottom: 0.5em;
+                }}
+                p {{
+                    margin-bottom: 1em;
+                }}
+                pre {{
+                    background-color: #f4f4f4;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    overflow-x: auto;
+                    white-space: pre-wrap; /* Allow wrapping */
+                    word-wrap: break-word; /* Break long words */
+                }}
+                code {{
+                    background-color: #f4f4f4;
+                    padding: 2px 4px;
+                    border-radius: 4px;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%; /* Full width tables */
+                    margin-bottom: 1em;
+                }}
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                    word-wrap: break-word;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                }}
+                ul, ol {{
+                    margin-bottom: 1em;
+                    padding-left: 40px; /* Indent lists */
+                }}
+                li {{
+                    margin-bottom: 0.5em; /* Space between list items */
+                    display: list-item; /* Ensure list items are block-level */
+                    /* Optional: Adjust list item markers */
+                    /* list-style-type: disc; for ul */
+                    /* list-style-type: decimal; for ol */
+                }}
+                blockquote {{
+                    border-left: 4px solid #ddd;
+                    padding-left: 10px;
+                    color: #555;
+                    margin-left: 0;
+                    margin-right: 0;
+                    margin-bottom: 1em;
+                }}
+                /* Ensure that list items do not display inline */
+                ul li, ol li {{
+                    display: list-item;
+                }}
+                /* Optional: Prevent lists from being wrapped incorrectly */
+                ul, ol {{
+                    display: block;
+                }}
+            </style>
+        </head>
+        <body>
+            {html_content}
+        </body>
+    </html>
+    """
+
+    HTML(string=html).write_pdf(output_path)
+    
