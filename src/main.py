@@ -80,16 +80,22 @@ if st.session_state['generated_app']:
     if generated_app.placeholder_needed:
         instruction_list = generated_app.artifacts["instruction_list"]
         st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
-        
-    if st.button(label='Deploy Locally'):
-        st.info('Attempting to start the docker container...')
-        process = subprocess.Popen(
-            ['docker-compose', '-f', os.path.join(generated_app.root_path, 'docker-compose.yml'), 'up', '--build'],
-            stdout=subprocess.PIPE,  # Redirect stdout
-            stderr=subprocess.PIPE,  # Redirect stderr
-            text=True  # Decodes output as text rather than bytes
-        )
     
-    if generated_app.architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
-        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
-            start_preview(generated_app)
+    col1, col2 = st.columns(2)
+    preview_available: bool = generated_app.architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]
+    deploy_locally = None
+    with col1:
+        deploy_locally = st.button(label='Deploy Locally', use_container_width=preview_available)
+    with col2:
+        if preview_available:
+            if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654', use_container_width=True):
+                start_preview(generated_app)
+                
+    if deploy_locally:
+        st.info('Attempting to start the docker container.')
+        process = subprocess.Popen(
+                ['docker-compose', '-f', os.path.join(generated_app.root_path, 'docker-compose.yml'), 'up', '--build'],
+                stdout=subprocess.PIPE,  # Redirect stdout
+                stderr=subprocess.PIPE,  # Redirect stderr
+                text=True  # Decodes output as text rather than bytes
+            )

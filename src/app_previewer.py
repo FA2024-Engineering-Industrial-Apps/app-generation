@@ -4,6 +4,7 @@ from appgenerator.generation_instance import GenerationInstance, AppArchitecture
 from appgenerator.util.filecopier import FileCopier
 import shutil
 import os
+import threading
 
 PREVIEW_SRC_FOLDER = os.path.join('artifacts', 'preview')
 
@@ -83,6 +84,7 @@ def start_preview(app: GenerationInstance) -> None:
     
     global server_running
     if not server_running:
-        server.run(host='127.0.0.1', port=7654)
+        def start_server():
+            server.run(host='127.0.0.1', port=7654)
+        threading.Thread(target=start_server, daemon=True).start()
         server_running = True
-    
