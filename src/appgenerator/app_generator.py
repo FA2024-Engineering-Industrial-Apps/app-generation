@@ -505,7 +505,6 @@ class IEAppGenerator(AppGenerator):
         self.app.artifacts.update({"documentation": doc})
         extract_pdf_from_markdown(doc,os.path.join(
             self.app.root_path,
-            config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "README.pdf",
         ))
 
@@ -636,7 +635,7 @@ class IEAppGenerator(AppGenerator):
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
 
-        if progress_callback:  progress_callback(7, total_llm_tasks, 'Writing Documentation...')
+        if progress_callback:  progress_callback(7, total_llm_tasks, 'Writing documentation...')
         self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
         if self.app.placeholder_needed:
             self._generate_instruction_list()
@@ -668,7 +667,7 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing Documentation...')
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing documentation...')
         self._generate_documentation(AppArchitecture.FRONTEND_ONLY)
         if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
@@ -698,7 +697,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing Documentation...')
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing documentation...')
         self._generate_documentation(AppArchitecture.BACKEND_ONLY)
         if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
