@@ -1,0 +1,48 @@
+# Usecase 1 : 
+I want to display a counter of the material used in my "Pick and Place" machine.
+The part consumption is published by the pick and place machine on the Databus (MQTT). Whenever the machine uses up a component (transistor, capacitor or resistor) it sends a message containing the name of the component used on the “material_consumption” channel/topic. The name is sent as a plain string.
+
+The app shall listen to the messages sent by the machine. Every time it receives a message it shall decrement a counter representing the number of components left. Initialize the counter of all components to 200.
+
+The app shall offer a web interface displaying a table containing the count of components left for each material. The table shall be full screen. The display shall update automatically every 5 seconds
+
+# Usecase 2 : 
+Create a Colorful clock with HTML, CSS and JS.
+
+# Usecase 3: 
+Create Creative realistic cake image in purple colur using html css and javascript 
+
+# Usecase 4: 
+Generate code for a simple UI that updates in real-time when receiving 'restock' or 'consume' events from MQTT. Use WebSocket to display the current number of parts available. The UI should show the count of parts on the screen and highlight any critical actions like reordering parts
+
+# Usecase 5: 
+Generate an app that listens to MQTT messages and displays a counter on the screen. The app should process 'restock' and 'consume' events, update the counter accordingly, and display the number of available parts in a full-screen UI
+
+# Usecase 6: 
+Create application user interface to Update the MQTT client to authenticate using a username and password. Replace 'broker_username' and 'broker_password' with the actual credentials needed to connect to the MQTT broker securely
+
+# Usecase 7: 
+Create application for  measuring 5 IOT devices sencing data and show avergae power consumption for multiple premises, consider 2 premises and random data for sensors and 5 different sensors
+
+# Usecase 8:
+Develop an Industrial Edge application that provides detailed production analytics. The app should track key performance metrics such as overall equipment effectiveness (OEE), production speed, and downtime. It should also monitor resource consumption (e.g., energy, material) and identify bottlenecks in real-time. The solution should display these analytics on a user-friendly dashboard with visual indicators for areas needing improvement.
+
+# Usecase 9:
+Create an Industrial Edge application that monitors machine health continuously to enable predictive maintenance. The app should analyze real-time machine data such as torque, voltage, current, and vibration to detect patterns that may indicate potential failures. It should provide alerts when anomalies are detected, allowing operators to address issues before they lead to unplanned downtime. The app should also optimize scheduled maintenance windows by predicting future failures based on historical data. Use the collected machine data from OPC-UA or MQTT and package this solution as a Docker-based Siemens Industrial Edge App."
+
+Key Elements to Include: Real-time monitoring of machine parameters (torque, voltage, current, vibration), Alerts and notifications for operators when potential failures are detected.
+
+App shall offer fully integrated functionalities
+
+
+# Usecase 10:
+Develop an Industrial Edge application that seamlessly integrates both IT and OT data sources. The app should pull data from shop floor devices (OT) using protocols like OPC-UA or MQTT and integrate it with IT data sources such as ERP systems, databases, and cloud services. The solution should provide a unified data model that simplifies the process of merging IT and OT data. The app should also include built-in connectors for common IT/OT systems and offer real-time data management tools to ensure compatibility across systems also include the siemens logo on the web UI and shown in Italian language
+
+App shall offer fully integrated functionalities
+
+# Usecase 11:
+Develop an Industrial Edge application that provides siemens logo,  fetch logo image from provided  website : https://www.logolynx.com/images/logolynx/c6/c6f4a399496fca146c603fa0562c9547.png
+on landing page, also provides option zto nevigate and select the differnet apps from application store, where they have different application such as Flow maker, EdgeConfig, ProcessMonitor, EdgeShark with little symbol
+
+# Usecase 12:
+Develop an Industrial Edge application interface that provides  landing page where its having  Breton named in red colur , also provides option to nevigate and select the differnet IOT sensors which are part of electric boats ,  also provides option zto nevigate and select the differnet apps from application store, differnet IOT sensors which are part of electric boats , where they have different sensors such as Battery Management Sensors, temprature measurement sensors, , Water Quality Sensors show random power consumption graph utilized my these sensors
