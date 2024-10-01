@@ -13,7 +13,7 @@ import os
 import re
 from .util.promptfetcher import PromptFetcher
 from .util.filecopier import FileCopier
-from .util.extractor import extract_imports_from_directory, extract_code
+from .util.extractor import extract_imports_from_directory, extract_code, extract_pdf_from_markdown
 from typing import Dict, Tuple, List, Callable
 import traceback
 from . import config
@@ -487,16 +487,11 @@ class IEAppGenerator(AppGenerator):
             config.PROMPT_RERUN_LIMIT,
         )
         self.app.artifacts.update({"documentation": doc})
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
-                "README.md",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(doc)
+        extract_pdf_from_markdown(doc,os.path.join(
+            self.app.root_path,
+            config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
+            "README.pdf",
+        ))
 
     @staticmethod
     def _ensure_empty_folder(folder_path):

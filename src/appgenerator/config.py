@@ -53,6 +53,8 @@ FOLDER_STRUCTURE_FOR_DOC : Dict[str, Dict[str, Any]] = {
 		'mqtt_lib.py' : os.path.join('program', 'src'),   
         }
     }
+
+DOC_OUTPUT_PATH : str = os.path.join('program')
 LOG_FOLDER : str = os.path.join('artifacts', 'logs')
 PROMPT_RERUN_LIMIT: int = 5
 
