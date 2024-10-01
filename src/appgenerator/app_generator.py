@@ -472,17 +472,33 @@ class IEAppGenerator(AppGenerator):
         )
         self.app.file_list.append("docker-compose.yml")
     
-    def _generate_documentation(self,architecture: AppArchitecture):
+    def _generate_documentation(self, architecture: AppArchitecture):
         self.logger.info("Generating documentation...")
-        doc = self.llm_client.get_validated_response(
-            self.prompt_fetcher.fetch(
-                "generate_docs", 
+        if architecture.value == "frontend_and_backend":
+            prompt = self.prompt_fetcher.fetch(
+                "generate_docs_fb", 
                 self.app.artifacts["architecture_description"],
                 self.app.artifacts["restful_api_definition"],
                 self.app.artifacts["import_list"],
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
                 self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
-            ),
+            )
+        elif architecture.value == "backend_only":
+            prompt = self.prompt_fetcher.fetch(
+                "generate_docs_b", 
+                self.app.artifacts["use_case"],
+                self.app.artifacts["import_list"],
+                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
+                self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
+            )
+        else:
+            prompt = self.prompt_fetcher.fetch(
+                "generate_docs_f", 
+                self.app.artifacts["use_case"],
+                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
+            )
+        doc = self.llm_client.get_validated_response(
+            prompt,
             self._plaintext_validator,
             config.PROMPT_RERUN_LIMIT,
         )
