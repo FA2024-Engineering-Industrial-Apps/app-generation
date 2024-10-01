@@ -544,6 +544,41 @@ class IEAppGenerator(AppGenerator):
         if not correct:
             self.logger.error('LLM failed to generate syntactically correct Python code.')
             raise BadLLMResponseError('LLM failed to generate syntactically correct Python code.')
+        
+    
+    def _placeholder_detector(self, code_artifacts: dict):
+            """Detect if there is placeholder in the code artifact.
+            Args:
+                code_artifacts: A dictionary holding filenames and code as key-value pairs.
+            Returns:
+                bool
+            """
+            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
+            pattern = re.compile(
+                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
+            )
+            matches = []
+            for _, code in code_artifacts.items():
+                match = pattern.search(code)
+                if match:
+                    matches.append(match)
+            return bool(matches)
+    
+
+    def _generate_instruction_list(self) -> None:
+        """
+        Generates list of instructions for TODOs in the generated code.
+        """
+
+        instruction_list = self.llm_client.get_response(
+            self.prompt_fetcher.fetch(
+                "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
+            )
+        )
+        self.app.artifacts.update(
+            {"instruction_list": instruction_list}
+        )
+
 
     def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
@@ -584,8 +619,13 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
-        self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
+
         if progress_callback:  progress_callback(7, total_llm_tasks, 'Wrting Documentation...')
+        self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
+        if self.app.placeholder_needed:
+            self._generate_instruction_list()
+
+        self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(8, total_llm_tasks, 'Done!')
         
 
@@ -676,38 +716,6 @@ class IEAppGenerator(AppGenerator):
                 raise BadLLMResponseError('LLM response not in ["a", "b", "c"].')
             return response
 
-        def _placeholder_detector(code_artifacts: dict):
-            """Detect if there is placeholder in the code artifact.
-            Args:
-                code_artifacts: A dictionary holding filenames and code as key-value pairs.
-            Returns:
-                bool
-            """
-            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
-            pattern = re.compile(
-                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
-            )
-            matches = []
-            for _, code in code_artifacts.items():
-                match = pattern.search(code)
-                if match:
-                    matches.append(match)
-            return bool(matches)
-
-        def _generate_instruction_list(self) -> None:
-            """
-            Generates list of instructions for TODOs in the generated code.
-            """
-
-            instruction_list = self.llm_client.get_response(
-                self.prompt_fetcher.fetch(
-                    "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
-                )
-            )
-            self.app.artifacts.update(
-                {"instruction_list": instruction_list}
-            )
-
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -720,10 +728,6 @@ class IEAppGenerator(AppGenerator):
                 .lower()
                 .strip()
             ](progress_callback)
-            self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
-            if self.app.placeholder_needed:
-                _generate_instruction_list(self)
-            self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
         except Exception:
             print(traceback.format_exc())
             raise
