@@ -32,6 +32,17 @@ def files(content):
     return send_from_directory(directory=os.path.join('..', PREVIEW_SRC_FOLDER), path=content)
 
 
+@server.route('/static/<content>', methods=['GET'])
+def static_files(content):
+    """
+    Returns the static file requested.
+
+    @return: The static file requested.
+    """
+    
+    return send_from_directory(directory=os.path.join('..', PREVIEW_SRC_FOLDER, 'static'), path=content)
+
+
 def ensure_empty_folder(folder_path):
     """
     Ensures that the specified folder is empty by removing and recreating it.
@@ -62,8 +73,13 @@ def start_preview(app: GenerationInstance) -> None:
     
     copier: FileCopier = FileCopier(app.root_path)
     copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['html'], 'index.html'), os.path.join(PREVIEW_SRC_FOLDER, 'index.html'))
-    copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'styles.css'), os.path.join(PREVIEW_SRC_FOLDER, 'styles.css'))
-    copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'script.js'), os.path.join(PREVIEW_SRC_FOLDER, 'script.js'))
+    if app.architecture == AppArchitecture.FRONTEND_ONLY:
+        copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'styles.css'), os.path.join(PREVIEW_SRC_FOLDER, 'styles.css'))
+        copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'script.js'), os.path.join(PREVIEW_SRC_FOLDER, 'script.js'))
+    else:
+        os.makedirs(os.path.join(PREVIEW_SRC_FOLDER, 'static'))
+        copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'styles.css'), os.path.join(PREVIEW_SRC_FOLDER, 'static', 'styles.css'))
+        copier.copy_and_insert(os.path.join(config.IE_APP_FOLDER_STRUCTURE[app.architecture.value]['static'], 'script.js'), os.path.join(PREVIEW_SRC_FOLDER, 'static', 'script.js'))
     
     global server_running
     if not server_running:

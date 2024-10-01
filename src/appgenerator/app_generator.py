@@ -370,7 +370,7 @@ class IEAppGenerator(AppGenerator):
                 encoding="utf8"
             ) as file:
                 file.write(backend_app_code)
-            
+
 
     def _package_backend_application(self, architecture: AppArchitecture) -> None:
         """
@@ -409,15 +409,21 @@ class IEAppGenerator(AppGenerator):
 
         @param architecture: The application architecture type.
         """
-        dst_file = os.path.join(
+        dst_dockerfile = os.path.join(
             self.app.root_path,
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
         if architecture == AppArchitecture.FRONTEND_ONLY:
-            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
+            dst_nginx_conf = os.path.join(
+                self.app.root_path,
+                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
+                "nginx.conf",
+            )   
+            self.file_copier.copy_and_insert(config.NGINX_CONFIG_TEMPLATE_NAME, dst_nginx_conf, {})
         else:
-            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
         self.app.file_list.append("Dockerfile")
         
 
@@ -462,7 +468,7 @@ class IEAppGenerator(AppGenerator):
         self.file_copier.copy_and_insert(
             config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
-            {"image_name": self.app.name.lower().replace(" ", "_")},
+            {"image_name": self.app.name.replace(" ", "_").lower()},
         )
         self.app.file_list.append("docker-compose.yml")
     
@@ -694,6 +700,20 @@ class IEAppGenerator(AppGenerator):
                     matches.append(match)
             return bool(matches)
 
+        def _generate_instruction_list(self) -> None:
+            """
+            Generates list of instructions for TODOs in the generated code.
+            """
+
+            instruction_list = self.llm_client.get_response(
+                self.prompt_fetcher.fetch(
+                    "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
+                )
+            )
+            self.app.artifacts.update(
+                {"instruction_list": instruction_list}
+            )
+
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -707,6 +727,8 @@ class IEAppGenerator(AppGenerator):
                 .strip()
             ](progress_callback)
             self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
+            if self.app.placeholder_needed:
+                _generate_instruction_list(self)
         except Exception:
             print(traceback.format_exc())
             raise
