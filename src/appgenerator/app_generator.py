@@ -474,7 +474,7 @@ class IEAppGenerator(AppGenerator):
     
     def _generate_documentation(self, architecture: AppArchitecture):
         self.logger.info("Generating documentation...")
-        if architecture.value == "frontend_and_backend":
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_fb", 
                 self.app.artifacts["architecture_description"],
@@ -483,7 +483,7 @@ class IEAppGenerator(AppGenerator):
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
                 self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
             )
-        elif architecture.value == "backend_only":
+        elif architecture == AppArchitecture.BACKEND_ONLY:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_b", 
                 self.app.artifacts["use_case"],
@@ -636,7 +636,7 @@ class IEAppGenerator(AppGenerator):
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
 
-        if progress_callback:  progress_callback(7, total_llm_tasks, 'Wrting Documentation...')
+        if progress_callback:  progress_callback(7, total_llm_tasks, 'Writing Documentation...')
         self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
         if self.app.placeholder_needed:
             self._generate_instruction_list()
@@ -659,7 +659,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 1
+        total_llm_tasks: int = 2
         
         self.app.architecture = AppArchitecture.FRONTEND_ONLY
         self._create_app_folder_structure(AppArchitecture.FRONTEND_ONLY)
@@ -668,8 +668,9 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: 
-            progress_callback(1, total_llm_tasks, 'Done!')
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing Documentation...')
+        self._generate_documentation(AppArchitecture.FRONTEND_ONLY)
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
@@ -686,7 +687,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 2
+        total_llm_tasks: int = 3
         
         self.app.architecture = AppArchitecture.BACKEND_ONLY
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
@@ -697,6 +698,8 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing Documentation...')
+        self._generate_documentation(AppArchitecture.BACKEND_ONLY)
         if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
 
