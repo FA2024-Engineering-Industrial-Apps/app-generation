@@ -39,7 +39,8 @@ FOLDER_STRUCTURE_FOR_DOC : Dict[str, Dict[str, Any]] = {
     'frontend_only' : {
         'root' : 'program',		
 		'Dockerfile' : 'program',
-		'README.md' : 'program',		
+        'nginx.conf' : 'program',
+		'README.md' : 'program',
         'index.html' : os.path.join('program', 'html'),
         'script.js' : os.path.join('program', 'html'),
 		'styles.css' : os.path.join('program', 'html'),

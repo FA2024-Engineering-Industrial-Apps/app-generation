@@ -474,7 +474,7 @@ class IEAppGenerator(AppGenerator):
     
     def _generate_documentation(self, architecture: AppArchitecture):
         self.logger.info("Generating documentation...")
-        if architecture.value == "frontend_and_backend":
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_fb", 
                 self.app.artifacts["architecture_description"],
@@ -483,7 +483,7 @@ class IEAppGenerator(AppGenerator):
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
                 self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
             )
-        elif architecture.value == "backend_only":
+        elif architecture == AppArchitecture.BACKEND_ONLY:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_b", 
                 self.app.artifacts["use_case"],
@@ -491,12 +491,14 @@ class IEAppGenerator(AppGenerator):
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
                 self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
             )
-        else:
+        elif architecture == AppArchitecture.FRONTEND_ONLY:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_f", 
                 self.app.artifacts["use_case"],
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
             )
+        else:
+            raise Exception('Unsupported architecture for document generation.')
         doc = self.llm_client.get_validated_response(
             prompt,
             self._plaintext_validator,
@@ -508,6 +510,7 @@ class IEAppGenerator(AppGenerator):
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "README.pdf",
         ))
+        
 
     @staticmethod
     def _ensure_empty_folder(folder_path):
@@ -600,8 +603,8 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
+        if progress_callback:  progress_callback(7, total_llm_tasks, 'Compiling documentation...')
         self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
-        if progress_callback:  progress_callback(7, total_llm_tasks, 'Wrting Documentation...')
         if progress_callback: progress_callback(8, total_llm_tasks, 'Done!')
         
 
@@ -619,7 +622,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 1
+        total_llm_tasks: int = 2
         
         self.app.architecture = AppArchitecture.FRONTEND_ONLY
         self._create_app_folder_structure(AppArchitecture.FRONTEND_ONLY)
@@ -628,8 +631,9 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: 
-            progress_callback(1, total_llm_tasks, 'Done!')
+        if progress_callback:  progress_callback(1, total_llm_tasks, 'Compiling documentation...')
+        self._generate_documentation(AppArchitecture.FRONTEND_ONLY)
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
@@ -657,7 +661,10 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
+        if progress_callback:  progress_callback(2, total_llm_tasks, 'Compiling documentation...')
+        self._generate_documentation(AppArchitecture.BACKEND_ONLY)
+        
+        if progress_callback: progress_callback(3, total_llm_tasks, 'Done!')
         
 
     def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
