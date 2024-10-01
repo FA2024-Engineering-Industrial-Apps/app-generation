@@ -17,5 +17,5 @@ brew install pygobject3 gtk+3
 To execute the streamlit app execute
 
 ```bash
-streamlit run main.py
+streamlit run src/main.py
 ```
