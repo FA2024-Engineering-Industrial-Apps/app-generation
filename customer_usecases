@@ -46,3 +46,6 @@ on landing page, also provides option zto nevigate and select the differnet apps
 
 # Usecase 12:
 Develop an Industrial Edge application interface that provides  landing page where its having  Breton named in red colur , also provides option to nevigate and select the differnet IOT sensors which are part of electric boats ,  also provides option zto nevigate and select the differnet apps from application store, differnet IOT sensors which are part of electric boats , where they have different sensors such as Battery Management Sensors, temprature measurement sensors, , Water Quality Sensors show random power consumption graph utilized my these sensors
+
+# Usecase 13:
+Sviluppa un'interfaccia per applicazioni Industrial Edge che fornisca una pagina di atterraggio con il nome "Breton" in rosso. L'interfaccia deve inoltre offrire l'opzione di navigare e selezionare i diversi sensori IoT che fanno parte delle barche elettriche. Deve includere anche un'opzione per navigare e selezionare le diverse app dallo store delle applicazioni. I sensori IoT delle barche elettriche includono sensori di gestione della batteria, sensori di misurazione della temperatura e sensori di qualità dell'acqua. Infine, l'interfaccia deve mostrare un grafico casuale del consumo di energia utilizzato da questi sensori.
