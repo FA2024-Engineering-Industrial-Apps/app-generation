@@ -66,7 +66,7 @@ app_name = st.text_input('App name', value=st.session_state["app_name"]).strip()
 use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", value=st.session_state['use_case_description'], height=400)
 
 
-col1, col2 = st.columns([6, 1])
+col1, col2 = st.columns([5, 1])
 
 with col1:
     if st.button("Generate Code"):
