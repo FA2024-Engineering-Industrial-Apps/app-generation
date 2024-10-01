@@ -109,7 +109,7 @@ if st.session_state['generated_app']:
         instruction_list = generated_app.artifacts["instruction_list"]
         st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     preview_available: bool = generated_app.architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]
     deploy_locally = None
     with col1:
@@ -118,10 +118,6 @@ if st.session_state['generated_app']:
         if preview_available:
             if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654', use_container_width=True):
                 start_preview(generated_app)
-    with col3:
-        with open(os.path.join(generated_app.root_path, "README.pdf"), 'rb') as pdf_file:
-            pdf_data = pdf_file.read()
-        st.download_button(label='Download Documentation', data=pdf_data, file_name=generated_app.name.replace(" ", "_").lower()+'_documentation.pdf', mime='application/pdf')
                 
     if deploy_locally:
         st.info('Attempting to start the docker container.')

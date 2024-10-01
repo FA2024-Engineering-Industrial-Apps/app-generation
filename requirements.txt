@@ -4,5 +4,3 @@ langchain_ollama
 streamlit_ace
 openai==1.47.1
 flask
-WeasyPrint 
-markdown

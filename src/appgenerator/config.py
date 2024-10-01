@@ -24,38 +24,6 @@ IE_APP_FOLDER_STRUCTURE : Dict[str, Dict[str, Any]] = {
         'source' : os.path.join('program', 'src'),
         }
     }
-FOLDER_STRUCTURE_FOR_DOC : Dict[str, Dict[str, Any]] = {
-    'frontend_and_backend' : {
-        'root' : 'program',
-		'Dockerfile' : 'program',
-		'README.md' : 'program',
-		'requirements.txt' : 'program',
-		'main.py' : os.path.join('program', 'src'),
-		'mqtt_lib.py' : os.path.join('program', 'src'),
-        'index.html' : os.path.join('program', 'src', 'templates'),
-        'script.js' : os.path.join('program', 'src', 'static'),
-		'styles.css' : os.path.join('program', 'src', 'static'),
-        },
-    'frontend_only' : {
-        'root' : 'program',		
-		'Dockerfile' : 'program',
-        'nginx.conf' : 'program',
-		'README.md' : 'program',
-        'index.html' : os.path.join('program', 'html'),
-        'script.js' : os.path.join('program', 'html'),
-		'styles.css' : os.path.join('program', 'html'),
-        },
-    'backend_only' : {
-        'root' : 'program',
-		'Dockerfile' : 'program',
-		'README.md' : 'program',
-		'requirements.txt' : 'program',
-		'main.py' : os.path.join('program', 'src'),
-		'mqtt_lib.py' : os.path.join('program', 'src'),   
-        }
-    }
-
-DOC_OUTPUT_PATH : str = os.path.join('program')
 LOG_FOLDER : str = os.path.join('artifacts', 'logs')
 PROMPT_RERUN_LIMIT: int = 5
 

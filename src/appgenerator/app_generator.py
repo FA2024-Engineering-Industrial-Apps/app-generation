@@ -13,7 +13,7 @@ import os
 import re
 from .util.promptfetcher import PromptFetcher
 from .util.filecopier import FileCopier
-from .util.extractor import extract_imports_from_directory, extract_code, extract_pdf_from_markdown
+from .util.extractor import extract_imports_from_directory, extract_code
 from typing import Dict, Tuple, List, Callable
 import traceback
 from . import config
@@ -471,44 +471,6 @@ class IEAppGenerator(AppGenerator):
             {"image_name": self.app.name.replace(" ", "_").lower()},
         )
         self.app.file_list.append("docker-compose.yml")
-    
-    def _generate_documentation(self, architecture: AppArchitecture):
-        self.logger.info("Generating documentation...")
-        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
-            prompt = self.prompt_fetcher.fetch(
-                "generate_docs_fb", 
-                self.app.artifacts["architecture_description"],
-                self.app.artifacts["restful_api_definition"],
-                self.app.artifacts["import_list"],
-                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
-                self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
-            )
-        elif architecture == AppArchitecture.BACKEND_ONLY:
-            prompt = self.prompt_fetcher.fetch(
-                "generate_docs_b", 
-                self.app.artifacts["use_case"],
-                self.app.artifacts["import_list"],
-                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
-                self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
-            )
-        elif architecture == AppArchitecture.FRONTEND_ONLY:
-            prompt = self.prompt_fetcher.fetch(
-                "generate_docs_f", 
-                self.app.artifacts["use_case"],
-                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
-            )
-        else:
-            raise Exception('Unsupported architecture for document generation.')
-        doc = self.llm_client.get_validated_response(
-            prompt,
-            self._plaintext_validator,
-            config.PROMPT_RERUN_LIMIT,
-        )
-        self.app.artifacts.update({"documentation": doc})
-        extract_pdf_from_markdown(doc,os.path.join(
-            self.app.root_path,
-            "README.pdf",
-        ))
         
 
     @staticmethod
@@ -562,41 +524,6 @@ class IEAppGenerator(AppGenerator):
         if not correct:
             self.logger.error('LLM failed to generate syntactically correct Python code.')
             raise BadLLMResponseError('LLM failed to generate syntactically correct Python code.')
-        
-    
-    def _placeholder_detector(self, code_artifacts: dict):
-            """Detect if there is placeholder in the code artifact.
-            Args:
-                code_artifacts: A dictionary holding filenames and code as key-value pairs.
-            Returns:
-                bool
-            """
-            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
-            pattern = re.compile(
-                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
-            )
-            matches = []
-            for _, code in code_artifacts.items():
-                match = pattern.search(code)
-                if match:
-                    matches.append(match)
-            return bool(matches)
-    
-
-    def _generate_instruction_list(self) -> None:
-        """
-        Generates list of instructions for TODOs in the generated code.
-        """
-
-        instruction_list = self.llm_client.get_response(
-            self.prompt_fetcher.fetch(
-                "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
-            )
-        )
-        self.app.artifacts.update(
-            {"instruction_list": instruction_list}
-        )
-
 
     def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
         """
@@ -612,7 +539,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 8
+        total_llm_tasks: int = 7
         
         self.app.architecture = AppArchitecture.FRONTEND_AND_BACKEND
         self._create_app_folder_structure(AppArchitecture.FRONTEND_AND_BACKEND)
@@ -637,14 +564,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
-
-        if progress_callback: progress_callback(7, total_llm_tasks, 'Compiling documentation...')
-        self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
-        if self.app.placeholder_needed:
-            self._generate_instruction_list()
-
-        self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
-        if progress_callback: progress_callback(8, total_llm_tasks, 'Done!')
+        if progress_callback: progress_callback(7, total_llm_tasks, 'Done!')
         
 
     def _generate_only_frontend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
@@ -661,7 +581,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 2
+        total_llm_tasks: int = 1
         
         self.app.architecture = AppArchitecture.FRONTEND_ONLY
         self._create_app_folder_structure(AppArchitecture.FRONTEND_ONLY)
@@ -670,9 +590,8 @@ class IEAppGenerator(AppGenerator):
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback:  progress_callback(1, total_llm_tasks, 'Compiling documentation...')
-        self._generate_documentation(AppArchitecture.FRONTEND_ONLY)
-        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
+        if progress_callback: 
+            progress_callback(1, total_llm_tasks, 'Done!')
         
 
     def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
@@ -689,7 +608,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 3
+        total_llm_tasks: int = 2
         
         self.app.architecture = AppArchitecture.BACKEND_ONLY
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
@@ -700,10 +619,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback:  progress_callback(2, total_llm_tasks, 'Compiling documentation...')
-        self._generate_documentation(AppArchitecture.BACKEND_ONLY)
-        
-        if progress_callback: progress_callback(3, total_llm_tasks, 'Done!')
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
         
 
     def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
@@ -738,6 +654,38 @@ class IEAppGenerator(AppGenerator):
                 raise BadLLMResponseError('LLM response not in ["a", "b", "c"].')
             return response
 
+        def _placeholder_detector(code_artifacts: dict):
+            """Detect if there is placeholder in the code artifact.
+            Args:
+                code_artifacts: A dictionary holding filenames and code as key-value pairs.
+            Returns:
+                bool
+            """
+            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
+            pattern = re.compile(
+                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
+            )
+            matches = []
+            for _, code in code_artifacts.items():
+                match = pattern.search(code)
+                if match:
+                    matches.append(match)
+            return bool(matches)
+
+        def _generate_instruction_list(self) -> None:
+            """
+            Generates list of instructions for TODOs in the generated code.
+            """
+
+            instruction_list = self.llm_client.get_response(
+                self.prompt_fetcher.fetch(
+                    "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
+                )
+            )
+            self.app.artifacts.update(
+                {"instruction_list": instruction_list}
+            )
+
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -750,6 +698,9 @@ class IEAppGenerator(AppGenerator):
                 .lower()
                 .strip()
             ](progress_callback)
+            self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
+            if self.app.placeholder_needed:
+                _generate_instruction_list(self)
         except Exception:
             print(traceback.format_exc())
             raise
