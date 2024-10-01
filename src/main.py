@@ -75,6 +75,10 @@ if st.button("Generate Code"):
             progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state["generated_app"]:
-    if app_generator.app.placeholder_needed:
-        instruction_list = app_generator.app.artifacts["instruction_list"]
+    if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
+        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
+            start_preview(st.session_state['generated_app'])
+            
+    if st.session_state['generated_app'].placeholder_needed:
+        instruction_list = st.session_state['generated_app'].artifacts["instruction_list"]
         st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
