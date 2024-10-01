@@ -1,4 +1,7 @@
 import logging
+import os
+import random
+
 import streamlit as st
 import streamlit.components.v1 as compenents
 import subprocess
@@ -56,12 +59,14 @@ if 'use_case_description' not in st.session_state:
     st.session_state['use_case_description'] = ""
 if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
+if 'demo_number' not in st.session_state:
+    st.session_state['demo_number'] = 0
 
 app_name = st.text_input('App name', value=st.session_state["app_name"]).strip()
 use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", value=st.session_state['use_case_description'], height=400)
 
 
-col1, col2 = st.columns([5, 1])
+col1, col2 = st.columns([6, 1])
 
 with col1:
     if st.button("Generate Code"):
@@ -86,14 +91,13 @@ with col1:
                 progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 with col2:
     if st.button("Demo"):
-        st.session_state.app_name = "Material Count"
-        st.session_state.use_case_description = '''I want to display a counter of the material used in my "Pick and Place" machine.
-
-The part consumption is published by the pick and place machine on the Databus (MQTT). Whenever the machine uses up a component (transistor, capacitor or resistor) it sends a message containing the name of the component used on the “material_consumption” channel/topic. The name is sent as a plain string.
-
-The app shall listen to the messages sent by the machine. Every time it receives a message it shall decrement a counter representing the number of components left. Initialize the counter of all components to 200.
-
-The app shall offer a web interface displaying a table containing the count of components left for each material. The table shall be full screen. The display shall update automatically every 5 seconds.'''
+        folders = os.listdir(os.path.join('resources', 'demos'))
+        choosen_demo = folders[st.session_state['demo_number'] % len(folders)]
+        
+        with open(os.path.join('resources', 'demos', choosen_demo, 'description.txt')) as f:
+            st.session_state.app_name = choosen_demo.replace('-', ' ')
+            st.session_state.use_case_description = f.read()
+        st.session_state['demo_number'] += 1
         st.rerun()
 
 if st.session_state['generated_app']:

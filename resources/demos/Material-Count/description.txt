@@ -1,0 +1,7 @@
+I want to display a counter of the material used in my "Pick and Place" machine.
+
+The part consumption is published by the pick and place machine on the Databus (MQTT). Whenever the machine uses up a component (transistor, capacitor or resistor) it sends a message containing the name of the component used on the “material_consumption” channel/topic. The name is sent as a plain string.
+
+The app shall listen to the messages sent by the machine. Every time it receives a message it shall decrement a counter representing the number of components left. Initialize the counter of all components to 200.
+
+The app shall offer a web interface displaying a table containing the count of components left for each material. The table shall be full screen. The display shall update automatically every 5 seconds.
