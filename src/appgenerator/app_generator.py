@@ -480,9 +480,8 @@ class IEAppGenerator(AppGenerator):
                 self.app.artifacts["architecture_description"],
                 self.app.artifacts["restful_api_definition"],
                 self.app.artifacts["import_list"],
-                #TODO: write a file structure exactor and a todo comments extractor
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
-                #self.app.artifacts["todo_comments"]
+                self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
             ),
             self._plaintext_validator,
             config.PROMPT_RERUN_LIMIT,
@@ -729,6 +728,7 @@ class IEAppGenerator(AppGenerator):
             self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
             if self.app.placeholder_needed:
                 _generate_instruction_list(self)
+            self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
         except Exception:
             print(traceback.format_exc())
             raise
