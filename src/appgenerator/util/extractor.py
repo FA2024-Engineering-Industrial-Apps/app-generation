@@ -1,8 +1,7 @@
 import os
 import re
 import markdown
-from weasyprint import HTML
-
+from xhtml2pdf import pisa
 
 def extract_code(text : str, file_type : str) -> str:
     """
@@ -70,94 +69,50 @@ def extract_imports_from_directory(directory):
                 all_imports.update(extract_imports_from_file(file_path))
     return all_imports
 
-def extract_pdf_from_markdown(input_text: str, output_path: str) -> None:
-    # Convert Markdown to HTML
-    html_content = markdown.markdown(input_text, extensions=['fenced_code', 'tables'])
 
-    # Customized CSS with smaller margins and enhanced styling
-    html = f"""
+def extract_pdf_from_markdown(md_content: str, output_path: str) -> None:
+    # Define CSS styles
+    styles = """
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 12pt;
+    }
+    pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border: 1px solid #e0e0e0;
+        overflow: auto;
+    }
+    code {
+        font-family: Courier, monospace;
+    }
+    ul, ol {
+        margin-left: 20px;
+    }
+    li {
+        margin-bottom: 5px;
+    }
+    </style>
+    """
+
+    # Convert Markdown to HTML with extensions
+    html_body = markdown.markdown(
+        md_content,
+        extensions=['fenced_code']
+    )
+
+    # Combine styles and HTML body
+    html_content = f"""
     <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                @page {{
-                    size: A4;
-                    margin: 0.5in; /* Reduced margin */
-                }}
-                body {{
-                    font-family: Arial, sans-serif;
-                    margin: 0; /* Use @page margin */
-                    font-size: 12pt;
-                    line-height: 1.2;
-                }}
-                h1, h2, h3, h4, h5, h6 {{
-                    margin-top: 1em;
-                    margin-bottom: 0.5em;
-                }}
-                p {{
-                    margin-bottom: 1em;
-                }}
-                pre {{
-                    background-color: #f4f4f4;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    overflow-x: auto;
-                    white-space: pre-wrap; /* Allow wrapping */
-                    word-wrap: break-word; /* Break long words */
-                }}
-                code {{
-                    background-color: #f4f4f4;
-                    padding: 2px 4px;
-                    border-radius: 4px;
-                }}
-                table {{
-                    border-collapse: collapse;
-                    width: 100%; /* Full width tables */
-                    margin-bottom: 1em;
-                }}
-                th, td {{
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: left;
-                    word-wrap: break-word;
-                }}
-                th {{
-                    background-color: #f2f2f2;
-                }}
-                ul, ol {{
-                    margin-bottom: 1em;
-                    padding-left: 40px; /* Indent lists */
-                }}
-                li {{
-                    margin-bottom: 0.5em; /* Space between list items */
-                    display: list-item; /* Ensure list items are block-level */
-                    /* Optional: Adjust list item markers */
-                    /* list-style-type: disc; for ul */
-                    /* list-style-type: decimal; for ol */
-                }}
-                blockquote {{
-                    border-left: 4px solid #ddd;
-                    padding-left: 10px;
-                    color: #555;
-                    margin-left: 0;
-                    margin-right: 0;
-                    margin-bottom: 1em;
-                }}
-                /* Ensure that list items do not display inline */
-                ul li, ol li {{
-                    display: list-item;
-                }}
-                /* Optional: Prevent lists from being wrapped incorrectly */
-                ul, ol {{
-                    display: block;
-                }}
-            </style>
-        </head>
-        <body>
-            {html_content}
-        </body>
+    <head>{styles}</head>
+    <body>{html_body}</body>
     </html>
     """
 
-    HTML(string=html).write_pdf(output_path)
-    
+    # Convert HTML to PDF
+    with open(output_path, 'wb') as pdf_file:
+        pisa_status = pisa.CreatePDF(
+            html_content,
+            dest=pdf_file
+        )
