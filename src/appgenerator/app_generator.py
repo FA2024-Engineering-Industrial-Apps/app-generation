@@ -370,7 +370,7 @@ class IEAppGenerator(AppGenerator):
                 encoding="utf8"
             ) as file:
                 file.write(backend_app_code)
-            
+
 
     def _package_backend_application(self, architecture: AppArchitecture) -> None:
         """
@@ -672,6 +672,20 @@ class IEAppGenerator(AppGenerator):
                     matches.append(match)
             return bool(matches)
 
+        def _generate_instruction_list(self) -> None:
+            """
+            Generates list of instructions for TODOs in the generated code.
+            """
+
+            instruction_list = self.llm_client.get_response(
+                self.prompt_fetcher.fetch(
+                    "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
+                )
+            )
+            self.app.artifacts.update(
+                {"instruction_list": instruction_list}
+            )
+
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -685,6 +699,8 @@ class IEAppGenerator(AppGenerator):
                 .strip()
             ](progress_callback)
             self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
+            if self.app.placeholder_needed:
+                _generate_instruction_list(self)
         except Exception:
             print(traceback.format_exc())
             raise

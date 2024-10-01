@@ -78,7 +78,8 @@ if st.button("Generate Code"):
 if st.session_state['generated_app']:
     generated_app: GenerationInstance = st.session_state['generated_app']
     if generated_app.placeholder_needed:
-        st.warning("Placeholder detected in the generated code.")
+        instruction_list = generated_app.artifacts["instruction_list"]
+        st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
         
     if st.button(label='Deploy Locally'):
         st.info('Attempting to start the docker container...')
