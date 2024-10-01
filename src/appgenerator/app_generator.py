@@ -409,15 +409,21 @@ class IEAppGenerator(AppGenerator):
 
         @param architecture: The application architecture type.
         """
-        dst_file = os.path.join(
+        dst_dockerfile = os.path.join(
             self.app.root_path,
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
         if architecture == AppArchitecture.FRONTEND_ONLY:
-            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
+            dst_nginx_conf = os.path.join(
+                self.app.root_path,
+                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
+                "nginx.conf",
+            )   
+            self.file_copier.copy_and_insert(config.NGINX_CONFIG_TEMPLATE_NAME, dst_nginx_conf, {})
         else:
-            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_file, {})
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
         self.app.file_list.append("Dockerfile")
         
 

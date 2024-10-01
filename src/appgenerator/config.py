@@ -30,3 +30,4 @@ PROMPT_RERUN_LIMIT: int = 5
 PYTHON_DOCKERFILE_TEMPLATE_NAME: str = 'Dockerfile_python.template'
 NGINX_DOCKERFILE_TEMPLATE_NAME: str = 'Dockerfile_nginx.template'
 DOCKER_COMPOSE_TEMPLATE_NAME: str = 'docker_compose.yml.template'
+NGINX_CONFIG_TEMPLATE_NAME: str = 'nginx_config.template'
