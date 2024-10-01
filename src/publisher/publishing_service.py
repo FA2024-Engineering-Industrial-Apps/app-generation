@@ -35,7 +35,8 @@ class Publisher:
         os.chmod(file_path, 0o755)
                 
 
-    def validate_version(self, version):
+    @staticmethod
+    def validate_version(version):
         """
         Validates a version number string based on semantic versioning rules.
         Valid format: X.Y.Z or X.Y.Z-<pre-release> or X.Y.Z+<build>
@@ -46,12 +47,9 @@ class Publisher:
         Returns:
         - bool: True if the version is valid, False otherwise
         """
-        # Regular expression for semantic versioning
-        pattern = r"^\d+\.\d+\.\d+$"
         
-        # Match the version against the pattern
-        if re.match(pattern, version):
-            return True
+        if version:
+            return re.match(r"^\d+\.\d+\.\d+$", version)
         else:
             return False
         
@@ -99,14 +97,7 @@ class Publisher:
     def build_image(app_path, docker_host_url, app_name, app_version):
         # Create a tarball of the application files
         with tarfile.open('app.tar', 'w') as tar:
-            tar.add(os.path.join(app_path, 'Dockerfile'))
-            tar.add(os.path.join(app_path, 'requirements.txt'))
-            tar.add(os.path.join(app_path, "src","static"))
-            tar.add(os.path.join(app_path, "src","templates"))
-            tar.add(os.path.join(app_path, "src","backend.py"))
-            tar.add(os.path.join(app_path, "src","mqtt_lib.py"))
-            tar.add(os.path.join(app_path, "src","server.py"))
-
+            tar.add(app_path)
 
         # Read the tarball
         with open('app.tar', 'rb') as f:
