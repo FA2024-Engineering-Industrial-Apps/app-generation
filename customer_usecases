@@ -49,3 +49,28 @@ Develop an Industrial Edge application interface that provides  landing page whe
 
 # Usecase 13:
 Sviluppa un'interfaccia per applicazioni Industrial Edge che fornisca una pagina di atterraggio con il nome "Breton" in rosso. L'interfaccia deve inoltre offrire l'opzione di navigare e selezionare i diversi sensori IoT che fanno parte delle barche elettriche. Deve includere anche un'opzione per navigare e selezionare le diverse app dallo store delle applicazioni. I sensori IoT delle barche elettriche includono sensori di gestione della batteria, sensori di misurazione della temperatura e sensori di qualità dell'acqua. Infine, l'interfaccia deve mostrare un grafico casuale del consumo di energia utilizzato da questi sensori.
+
+# Usecase 14:
+Develop an Industrial Edge application interface with the following static visualization features:
+Landing Page Design:
+Display the title 'Breton' in bold red font at the top of the landing page.
+Showcase icons or graphical representations of three IoT sensors:
+Battery Management Sensors
+Temperature Measurement Sensors
+Water Flow Sensors
+Include easy-to-navigate buttons allowing users to view the power consumption graphs for each sensor type.
+Static Data Visualization:
+For each sensor type, generate a bar chart using a static sample dataset of 10 points, representing power consumption data over a 1-hour period.
+Use minutes (1-10) as the x-axis and power consumption (watts) as the y-axis.
+Generate static, random power consumption values for each sensor:
+Battery Management Sensors: generate random power consumption between 50-150 watts.
+Temperature Measurement Sensors: generate random power consumption between 20-100 watts.
+Water Flow Sensors: generate random power consumption between 30-120 watts.
+Graph Details:
+Display each sensor's power consumption data in its own unique color on the bar chart.
+Include proper x-axis (Time in Minutes) and y-axis (Power Consumption in Watts) labels.
+The bar chart should display all three sensors together, side by side, for each time point.
+Graph Display:
+Provide a static visualization where users can compare the power consumption of the three sensors.
+Ensure that the charts are responsive and clear, with properly labeled data points and a legend explaining the different sensor types.
+The interface should focus on delivering a clear, static comparison of power consumption for each sensor based on the randomly generated data. This visualization should be responsive and well-labeled, providing users with a snapshot of how each sensor performs over time.
