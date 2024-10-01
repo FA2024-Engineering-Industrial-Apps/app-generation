@@ -475,7 +475,6 @@ class IEAppGenerator(AppGenerator):
     def _generate_documentation(self, architecture: AppArchitecture):
         self.logger.info("Generating documentation...")
         if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
-        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_fb", 
                 self.app.artifacts["architecture_description"],
@@ -484,7 +483,6 @@ class IEAppGenerator(AppGenerator):
                 str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
                 self.app.artifacts["instruction_list"] if self.app.placeholder_needed else ""
             )
-        elif architecture == AppArchitecture.BACKEND_ONLY:
         elif architecture == AppArchitecture.BACKEND_ONLY:
             prompt = self.prompt_fetcher.fetch(
                 "generate_docs_b", 
@@ -509,7 +507,6 @@ class IEAppGenerator(AppGenerator):
         self.app.artifacts.update({"documentation": doc})
         extract_pdf_from_markdown(doc,os.path.join(
             self.app.root_path,
-            config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "README.pdf",
         ))
         
