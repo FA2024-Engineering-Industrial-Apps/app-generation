@@ -76,4 +76,5 @@ if st.button("Generate Code"):
 
 if st.session_state["generated_app"]:
     if app_generator.app.placeholder_needed:
-        st.warning("Placeholder detected in the generated code.")
+        instruction_list = app_generator.app.artifacts["instruction_list"]
+        st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
