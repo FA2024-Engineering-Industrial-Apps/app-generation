@@ -1,0 +1,100 @@
+Based on the task distribution:
+[%text%]
+
+the RESTful API definition:
+[%text%]
+
+the requirements list for backend app:
+[%text%]
+
+the file structure:
+[%text%]
+
+the TODO comments:
+[%text%]
+
+Generate a comprehensive documentation for the project with the following structure:
+1. Overview
+Background:
+Introduce the purpose of the application. Explain what the app is designed to do, its target audience, and the problem it aims to solve.
+
+Task Distribution:
+Incorporate the content from the Task Distribution section to explain how different tasks are allocated within the project.
+
+RESTful API Details:
+Summarize the RESTful API definitions provided, outlining the available endpoints, their functionalities, and how they interact with other components of the application.
+
+2. Requirements and Prerequisites
+Environment:
+Specify the operating systems, hardware requirements, and any other environmental prerequisites needed to run the application.
+
+Required Packages:
+List all necessary packages and dependencies, including their versions. Reference the requirements.txt file located in the program/ directory.
+
+Installation Tools:
+Mention any tools or platforms required for installation, such as Docker, and provide version recommendations if applicable.
+
+3. App Architecture
+Folder Structure:
+Display the project's folder structure and provide a brief description of each major directory and its purpose.
+
+Component Interaction:
+Explain how different modules and components interact within the application, referencing key files like server.py, backend.py, and mqtt_lib.py.
+
+4. Configuration Steps
+Pending Information:
+If there are highlight areas in the source code marked with #TODO comments that require further information or development. You should list these pending items to inform users of incomplete features or configurations.
+
+Outline configuration details that users might need to provide in the future. For example, specify variables or settings that may need to be adjusted in the docker-compose.yml file or other configuration files.
+
+Docker Configuration:
+The docker-compose.yml is as follows:
+```
+version: '2.4'
+
+services:
+  ie_app:
+    image: {{image_name}}  # The name of your Docker image
+    build:
+      context: ./program         # Context for the build (where your Dockerfile is)
+    ports:
+      - "5000:5000"       # Map port 5000 on the host to port 5000 on the container
+```
+
+Detail any environment variables, port mappings, volume mounts, or network settings that may need to be customized.
+
+API Keys and Secrets:
+Mention where users should input their API keys, secrets, or other sensitive information.
+
+Database Settings:
+If applicable, describe how to configure database connections, including hostnames, ports, and credentials.
+
+5. Further Documentation
+It should contain the following links for further reference.
+- [Industrial Edge Hub](https://iehub.eu1.edge.siemens.cloud/#/documentation)
+- [Industrial Edge Forum](https://www.siemens.com/industrial-edge-forum)
+- [Industrial Edge landing page](https://new.siemens.com/global/en/products/automation/topic-areas/industrial-edge/simatic-edge.html)
+- [Industrial Edge GitHub page](https://github.com/industrial-edge)
+- [Industrial Edge Learning Path](https://siemens-learning-simaticedge.sabacloud.com/)
+
+6. Install Application on Industrial Edge Device
+To install the application on an Industrial Edge Device:
+Navigate to Industrial Edge Management.
+Select the uploaded version of the application.
+Click on Install to deploy it to the Industrial Edge Device.
+
+7. Usage
+Provide detailed instructions on how to use the application, including:
+
+Starting the Application:
+Explain how to launch the application using Docker or any other specified method.
+
+Accessing the Interface:
+Describe how to access the application's user interface, including URLs, ports, and login credentials if necessary.
+
+Interacting with the API:
+Provide examples of how to interact with the RESTful APIs, including sample requests and expected responses.
+
+Just output the documentation content inside the markdown code block '''markdown   
+''' 
+No further output is needed.

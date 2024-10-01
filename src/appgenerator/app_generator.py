@@ -465,7 +465,33 @@ class IEAppGenerator(AppGenerator):
             {"image_name": self.app.name.lower().replace(" ", "_")},
         )
         self.app.file_list.append("docker-compose.yml")
-        
+    
+    def _generate_documentation(self,architecture: AppArchitecture):
+        self.logger.info("Generating documentation...")
+        doc = self.llm_client.get_validated_response(
+            self.prompt_fetcher.fetch(
+                "generate_docs", 
+                self.app.artifacts["architecture_description"],
+                self.app.artifacts["restful_api_definition"],
+                self.app.artifacts["import_list"],
+                #TODO: write a file structure exactor and a todo comments extractor
+                str(config.FOLDER_STRUCTURE_FOR_DOC[architecture.value]),
+                #self.app.artifacts["todo_comments"]
+            ),
+            self._plaintext_validator,
+            config.PROMPT_RERUN_LIMIT,
+        )
+        self.app.artifacts.update({"documentation": doc})
+        with open(
+            os.path.join(
+                self.app.root_path,
+                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
+                "README.md",
+            ),
+            "w",
+            encoding="utf8"
+        ) as file:
+            file.write(doc)
 
     @staticmethod
     def _ensure_empty_folder(folder_path):
@@ -533,7 +559,7 @@ class IEAppGenerator(AppGenerator):
             - current step name (str): A description of the current step being executed.
             If not provided, progress reporting is skipped.
         """
-        total_llm_tasks: int = 7
+        total_llm_tasks: int = 8
         
         self.app.architecture = AppArchitecture.FRONTEND_AND_BACKEND
         self._create_app_folder_structure(AppArchitecture.FRONTEND_AND_BACKEND)
@@ -558,7 +584,9 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(7, total_llm_tasks, 'Done!')
+        self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
+        if progress_callback:  progress_callback(7, total_llm_tasks, 'Wrting Documentation...')
+        if progress_callback: progress_callback(8, total_llm_tasks, 'Done!')
         
 
     def _generate_only_frontend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
