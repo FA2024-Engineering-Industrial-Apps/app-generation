@@ -1,8 +1,0 @@
-version: '2.4'
-
-services:
-  ie_app:
-    image: {{image_name}}  # The name of your Docker image
-    ports:
-      - "5000:5000"       # Map port 5000 on the host to port 5000 on the container
-    mem_limit: 256m  # Memory limit for the app-generator service (set as needed)
