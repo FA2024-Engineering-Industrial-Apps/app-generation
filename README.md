@@ -11,5 +11,5 @@ pip install -r requirements.txt
 You should also have `ollama` installed on your system. To execute the streamlit app execute
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run src/main.py
 ```
