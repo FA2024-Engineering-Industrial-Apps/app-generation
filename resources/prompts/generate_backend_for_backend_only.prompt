@@ -47,5 +47,5 @@ class MQTTClient:
 
 Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
 
-If any details are unclear, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials.
+If things have to be changed before deploying, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials. Only use this if this is necessary.
 Unless otherwise specified, use "ie-databus" as a broker address, 1883 as a brokerport and "edge" both for username and password in the mqtt client.
