@@ -25,24 +25,20 @@ st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
 
-role_mapping = {
-    "human": "user",
-    "ai": "assistant",
-    "system": "system"
-}
-
 if 'generating_app' not in st.session_state:
     st.session_state.generating_app = False  # Flag to indicate if the code is being generated.
 
 if 'refining_prompt' not in st.session_state:
-    st.session_state.refining_prompt = False  # Flag to indicate if the code is being generated.
+    st.session_state.refining_prompt = False  # Flag to indicate if the prompt is being refined.
+
+if 'input_counter' not in st.session_state:
+    st.session_state.input_counter = 0  # A counter to generate unique keys
 
 
 def refine_input(app_generator: IEAppGenerator, user_input) -> str:
     st.session_state.refining_prompt = True
     if 'conversation_history' not in st.session_state:
         st.session_state.conversation_history = []
-        st.session_state.input_counter = 0  # A counter to generate unique keys
 
         # Initialize with system message if not already done
         initial_prompt = app_generator.prompt_fetcher.fetch("refinement")
@@ -57,13 +53,7 @@ def refine_input(app_generator: IEAppGenerator, user_input) -> str:
 
     if "User prompt is completed" not in bot_response:
         st.session_state.input_counter += 1
-        st.write(f"AI: {bot_response}")
-        user_input = st.text_input("You:", key=f"user_input_{st.session_state.input_counter}")
-        if st.button("Send", key=f"send_button_{st.session_state.input_counter}"):
-            if user_input:
-                refine_input(app_generator, user_input)
-            else:
-                st.warning("Please provide further information.")
+        st.rerun()
 
     else:
         st.write("User prompt is completed. Generating app...")
@@ -80,10 +70,10 @@ def refine_conversation(conversation_history):
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
-        'FAPS LLM' : FAPSLLMClient(logger),
-        'Workstation LLM' : WorkstationLLMClient(logger),
-        'Siemens LLM' : SiemensLLMClient(logger),
-        'ChatGPT' : OpenAILLMClient(logger)
+        'FAPS LLM': FAPSLLMClient(logger),
+        'Workstation LLM': WorkstationLLMClient(logger),
+        'Siemens LLM': SiemensLLMClient(logger),
+        'ChatGPT': OpenAILLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
@@ -101,15 +91,20 @@ st.markdown('### Industrial Edge App Details')
 # TODO
 if not st.session_state.refining_prompt:
     app_name = st.text_input('App name', value='My IE App').strip()
-    use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400, key="Initial Input")
+    use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400)
 else:
     app_name = st.text_input('App name', value='My IE App').strip()
-    use_case_description = st.text_input("")
+    for msg in st.session_state.conversation_history:
+        if msg.type != 'system':  # Skip 'system' messages
+            with st.chat_message(msg.type):
+                st.write(msg.content)
+    use_case_description = st.text_area("Your response:", height=200, key=st.session_state.input_counter)
+
 
 if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
 
-if st.button("Generate Code"):
+if st.button("Submit"):
     st.session_state['generated_app'] = None
     if llm_client.secret_name and not llm_client.secret:
         st.warning('Please configure an LLM to generate your app.')
