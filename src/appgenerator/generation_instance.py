@@ -45,6 +45,7 @@ class GenerationInstance():
         self.code_artifacts: Dict[str, str] = dict()
         self.file_list: List[str] = list()
         self.architecture: AppArchitecture = None
+        self.placeholder_needed = False
         
         
     def get_code_artifacts(self) -> Dict[str, str]:
