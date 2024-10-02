@@ -1,9 +1,0 @@
-version: '2.4'
-
-services:
-  ie_app:
-    image: {{image_name}}  # The name of your Docker image
-    build:
-      context: ./program         # Context for the build (where your Dockerfile is)
-    ports:
-      - "5000:5000"       # Map port 5000 on the host to port 5000 on the container

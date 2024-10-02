@@ -1,14 +1,22 @@
-You are a software architect and need to plan a detailed description of the software architecture.
-The software consists of two components, a frontend web user interface, and a backend program. The backend program communicates with manufacturing machines via MQTT.
-It may control these machines and/or aggregate data received from them depending on the use-case, but these machines as well as the MQTT bus are not part of the software.
-The backend program provides an interface for the frontend via RESTful API. The frontend only displays data and/or offer various controls, it does not process any data.
-All data processing shall happen in the backend. Given this general software architecture, and the requirements specified below, define only the following details:
-- roles of each components,
-- data & control flow within each component (what needs to be calculated and how? what messages need to be received or transmitted?),
-- interaction between the machine and the backend program, interaction between the frontend and backend programs (what queries/commands need to be sent? how often? what data needs to be exchanged?).
-- additional requirements and details about the software component. Write anything here that pertains to the given software component and is not mentioned elsewhere. Make sure to save every detail from the use-case description so no information is lost.
+You are a software engineer and need to create the detailed design document of a software project. Be straightforward and to the point using expert language. The detailed description will be read by professional software developers.
+The software consists of two components, a frontend web user interface, and a backend program.
+The backend program does data processing, communicates with peripherals and provides an interface for the frontend via RESTful API. The task of the frontend web interface is to provide data visualization and control depending on the use case. The frontend interface does not communicate directly with peripherals, it only communicates with the backend via a RESTful API.
+Based on the specific use case create the detailed description of each component.
 
-Do not define any further details about the technologies. You should also not include the exact RESTful API, just describe the interaction.
+Start by defining the following for the frontend:
+- role
+- interface layout and component description
+- style description
+- interaction with the backend (what data needs to be transmitted? what commands will be received? Data exchange format. Do not define the exact RESTful endpoints, as this will be done later.)
+
+Continue by defining the following for the backend:
+- its role
+- an overview of its architecture
+- data and control flow, general program structure in natural language
+- communication with peripherals (protocol, configuration data, messages exchanged, data exchange format)
+- interaction with the frontend (same as defined for the frontend).
+
+Do not define any further details about the technologies.
 Structure the definition so that the first part is only about the frontend and the second part is only about the backend. Separate the two sections with the following character sequence: '<<++>>'. Only include necessary descriptions in each part and do not repeat things.
 Here are the software requirements:
 

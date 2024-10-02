@@ -1,13 +1,16 @@
 import logging
+import os
+import random
+
 import streamlit as st
 import streamlit.components.v1 as compenents
+import subprocess
 
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
-
-# TODO: 
 from app_previewer import *
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -19,6 +22,8 @@ logging.basicConfig(
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
 
+st.set_page_config(page_title='IE App Generator')
+
 st.title("Industrial Edge Application Generator")
 st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
@@ -27,12 +32,13 @@ st.markdown(
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
+        'ChatGPT' : OpenAILLMClient(logger),
         'FAPS LLM' : FAPSLLMClient(logger),
         'Workstation LLM' : WorkstationLLMClient(logger),
-        'Siemens LLM' : SiemensLLMClient(logger),
-        'ChatGPT' : OpenAILLMClient(logger)
+        'Siemens LLM' : SiemensLLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
+    st.caption('For best performance it is highly recommended to use the GPT-4o model from OpenAI.')
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
 
     # Input secret
@@ -45,13 +51,39 @@ with st.expander('LLM Configuration'):
         
 st.markdown('### Industrial Edge App Details')
 
-app_name = st.text_input('App name', value='My IE App').strip()
-use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400)
 
+# Session State
+if 'app_name' not in st.session_state:
+    st.session_state['app_name'] = "My IE App"
+if 'use_case_description' not in st.session_state:
+    st.session_state['use_case_description'] = ""
 if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
+if 'demo_number' not in st.session_state:
+    st.session_state['demo_number'] = 0
 
-if st.button("Generate Code"):
+app_name = st.text_input('App name', value=st.session_state["app_name"]).strip()
+use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", value=st.session_state['use_case_description'], height=400)
+
+
+col1, col2 = st.columns(2)
+generate_code = None
+
+with col1:
+    generate_code = st.button("Generate Code", use_container_width=True)
+with col2:
+    if st.button("Demo Use Case", use_container_width=True):
+        folders = os.listdir(os.path.join('resources', 'demos'))
+        choosen_demo = folders[st.session_state['demo_number'] % len(folders)]
+        
+        with open(os.path.join('resources', 'demos', choosen_demo, 'description.txt')) as f:
+            st.session_state.app_name = choosen_demo.replace('-', ' ')
+            st.session_state.use_case_description = f.read()
+        st.session_state['demo_number'] += 1
+        st.rerun()
+    
+if generate_code:    
+    st.session_state['generated_app'] = None
     if llm_client.secret_name and not llm_client.secret:
         st.warning('Please configure an LLM to generate your app.')
     elif not app_name:
@@ -60,14 +92,42 @@ if st.button("Generate Code"):
         st.warning("Please enter a use case description.")
     else:
         app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
-        with st.spinner("Generating code..."):
-            try:
-                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description)
-                st.info('App successfully generated.')
-            except BadLLMResponseError:
-                st.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
+        progress_indication = st.progress(0, 'Generating app...')
+        
+        def update_progress(steps_done: int, total_steps: int, current_step: str) -> None:
+            progress_indication.progress(value=steps_done/total_steps, text=f'({steps_done + 1}/{total_steps + 1}) {current_step}')
+            
+        try:
+            st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description, update_progress)
+            progress_indication.info('App successfully generated.')
+        except BadLLMResponseError:
+            progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
-    if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
-        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
-            start_preview(st.session_state['generated_app'])
+    generated_app: GenerationInstance = st.session_state['generated_app']
+    if generated_app.placeholder_needed:
+        instruction_list = generated_app.artifacts["instruction_list"]
+        st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
+    
+    col1, col2, col3 = st.columns(3)
+    preview_available: bool = generated_app.architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]
+    deploy_locally = None
+    with col1:
+        deploy_locally = st.button(label='Deploy Locally', use_container_width=True)
+    with col2:
+        if preview_available:
+            if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654', use_container_width=True):
+                start_preview(generated_app)
+    with col3:
+        with open(os.path.join(generated_app.root_path, "README.pdf"), 'rb') as pdf_file:
+            pdf_data = pdf_file.read()
+        st.download_button(label='Download Documentation', data=pdf_data, file_name=generated_app.name.replace(" ", "_").lower()+'_documentation.pdf', mime='application/pdf', use_container_width=True)
+                
+    if deploy_locally:
+        st.info('Attempting to start the docker container.')
+        process = subprocess.Popen(
+                ['docker-compose', '-f', os.path.join(generated_app.root_path, 'docker-compose.yml'), 'up', '--build'],
+                stdout=subprocess.PIPE,  # Redirect stdout
+                stderr=subprocess.PIPE,  # Redirect stderr
+                text=True  # Decodes output as text rather than bytes
+            )
