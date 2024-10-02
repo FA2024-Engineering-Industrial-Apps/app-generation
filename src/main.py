@@ -9,7 +9,6 @@ import subprocess
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 # TODO:
 from app_previewer import *
@@ -44,19 +43,19 @@ if 'input_counter' not in st.session_state:
 
 def refine_input(app_generator: IEAppGenerator, user_input) -> str:
     st.session_state.refining_prompt = True
-    if 'conversation_history' not in st.session_state:
-        st.session_state.conversation_history = []
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
 
         # Initialize with system message if not already done
         initial_prompt = app_generator.prompt_fetcher.fetch("refinement")
-        st.session_state.conversation_history.append(SystemMessage(initial_prompt))
+        st.session_state.messages.append({"role": "system", "content": initial_prompt})
 
     # Add the user's input to the conversation history
-    st.session_state.conversation_history.append(HumanMessage(user_input))
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
     # Process the conversation and get the AI's response
-    bot_response = refine_conversation(st.session_state.conversation_history)
-    st.session_state.conversation_history.append(AIMessage(bot_response))
+    bot_response = refine_conversation(st.session_state.messages)
+    st.session_state.messages.append({"role": "assistant", "content": bot_response})
 
     if "User prompt is completed" not in bot_response:
         st.session_state.input_counter += 1
@@ -102,10 +101,10 @@ if not st.session_state.refining_prompt:
     use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400)
 else:
     app_name = st.text_input('App name', value='My IE App').strip()
-    for msg in st.session_state.conversation_history:
-        if msg.type != 'system':  # Skip 'system' messages
-            with st.chat_message(msg.type):
-                st.write(msg.content)
+    for msg in st.session_state.messages:
+        if msg['role'] != 'system':  # Skip 'system' messages
+            with st.chat_message(msg['role']):
+                st.write(msg['content'])
     use_case_description = st.text_area("Your response:", height=200, key=st.session_state.input_counter)
 
 
