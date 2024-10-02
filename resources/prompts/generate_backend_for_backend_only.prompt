@@ -2,8 +2,13 @@ You are a software developer tasked with writing a Python application in a singl
 
 [%text%]
 
-If required, you can interact with Industrial Edge machines through the MQTT data bus. To do this, use the `MQTTClient` class provided below, which is stored in `mqtt_lib.py`.
-Import everything from this library using `from mqtt_lib import *`. Also, import `MQTTMessage` from `paho.mqtt.client` (this should be the only item you import from `paho`).
+Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
+
+If things have to be changed before deploying, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials. Only use this if this is necessary.
+Unless otherwise specified, use "ie-databus" as a broker address, 1883 as a brokerport and "edge" both for username and password in the mqtt client.
+
+If the design description calls for using MQTT, use the `MQTTClient` class provided below, which is stored in `mqtt_lib.py`. Only if the description explicitly calls for using MQTT shall you use MQTT and the following library. If this is not the case, disregard the rest of the prompt.
+In this case you should import everything from this library using `from mqtt_lib import *`. Additionally, import `MQTTMessage` from `paho.mqtt.client` (this should be the only item you import from `paho`).
 
 Here is the `MQTTClient` class definition:
 
@@ -45,7 +50,4 @@ class MQTTClient:
         :param retain: Retain flag (default is False).
         """
 
-Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
-
-If things have to be changed before deploying, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials. Only use this if this is necessary.
-Unless otherwise specified, use "ie-databus" as a broker address, 1883 as a brokerport and "edge" both for username and password in the mqtt client.
+Again, remember to only use this MQTT library if the detailed software description attached before calls for MQTT communication. If this is not the case, implement the communication specified in the design description.

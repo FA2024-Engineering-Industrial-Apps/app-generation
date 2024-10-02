@@ -7,6 +7,5 @@ Here is the API definition:
 [%text%]
 
 Write a list that maps each endpoint in the API definition to one function signature.
-Include the exact endpoint name in the mapping. Do not write out the function body, just give the function head with parameters and static return type.
-Additionally, provide detailed information about the return data as a comment behind the function head.
+Include the exact endpoint name in the mapping. Do not write out the function body, just give the function head with parameters and static return type. Define and describe the return value of the function, specifically including its data structure. Write this description as a comment after the function signature.
 Do not output anything else except the list.
