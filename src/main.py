@@ -5,8 +5,9 @@ import streamlit.components.v1 as compenents
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
 from appgenerator.generation_instance import GenerationInstance, AppArchitecture
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-# TODO: 
+# TODO:
 from app_previewer import *
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,58 @@ st.title("Industrial Edge Application Generator")
 st.markdown(
     "Provide the necessary requirements and associated details in the input below. The assistant will generate an app configuration for you."
 )
+
+role_mapping = {
+    "human": "user",
+    "ai": "assistant",
+    "system": "system"
+}
+
+if 'generating_app' not in st.session_state:
+    st.session_state.generating_app = False  # Flag to indicate if the code is being generated.
+
+if 'refining_prompt' not in st.session_state:
+    st.session_state.refining_prompt = False  # Flag to indicate if the code is being generated.
+
+
+def refine_input(app_generator: IEAppGenerator, user_input) -> str:
+    st.session_state.refining_prompt = True
+    if 'conversation_history' not in st.session_state:
+        st.session_state.conversation_history = []
+        st.session_state.input_counter = 0  # A counter to generate unique keys
+
+        # Initialize with system message if not already done
+        initial_prompt = app_generator.prompt_fetcher.fetch("refinement")
+        st.session_state.conversation_history.append(SystemMessage(initial_prompt))
+
+    # Add the user's input to the conversation history
+    st.session_state.conversation_history.append(HumanMessage(user_input))
+
+    # Process the conversation and get the AI's response
+    bot_response = refine_conversation(st.session_state.conversation_history)
+    st.session_state.conversation_history.append(AIMessage(bot_response))
+
+    if "User prompt is completed" not in bot_response:
+        st.session_state.input_counter += 1
+        st.write(f"AI: {bot_response}")
+        user_input = st.text_input("You:", key=f"user_input_{st.session_state.input_counter}")
+        if st.button("Send", key=f"send_button_{st.session_state.input_counter}"):
+            if user_input:
+                refine_input(app_generator, user_input)
+            else:
+                st.warning("Please provide further information.")
+
+    else:
+        st.write("User prompt is completed. Generating app...")
+        st.session_state.generating_app = True
+        return bot_response
+
+
+def refine_conversation(conversation_history):
+    response = llm_client.get_response(str(conversation_history))
+    # TODO: add methods to llm_client to receive conversation_history as a parameter and send it to the LLM
+    return response
+
 
 with st.expander('LLM Configuration'):
     # LLM Selection
@@ -42,16 +95,22 @@ with st.expander('LLM Configuration'):
             llm_client.set_secret(secret)
         else:
             st.warning(f'Please enter your {llm_client.secret_name}.')
-        
+
 st.markdown('### Industrial Edge App Details')
 
-app_name = st.text_input('App name', value='My IE App').strip()
-use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400)
+# TODO
+if not st.session_state.refining_prompt:
+    app_name = st.text_input('App name', value='My IE App').strip()
+    use_case_description = st.text_area("Describe the Industrial Edge App you want to create:", height=400, key="Initial Input")
+else:
+    app_name = st.text_input('App name', value='My IE App').strip()
+    use_case_description = st.text_input("")
 
 if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
 
 if st.button("Generate Code"):
+    st.session_state['generated_app'] = None
     if llm_client.secret_name and not llm_client.secret:
         st.warning('Please configure an LLM to generate your app.')
     elif not app_name:
@@ -60,12 +119,18 @@ if st.button("Generate Code"):
         st.warning("Please enter a use case description.")
     else:
         app_generator: AppGenerator = IEAppGenerator(logger, llm_client)
-        with st.spinner("Generating code..."):
+        use_case_description = refine_input(app_generator, use_case_description)
+        if st.session_state.generating_app:
+            progress_indication = st.progress(0, 'Generating app...')
+
+            def update_progress(steps_done: int, total_steps: int, current_step: str) -> None:
+                progress_indication.progress(value=steps_done/total_steps, text=f'({steps_done + 1}/{total_steps + 1}) {current_step}')
+
             try:
-                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description)
-                st.info('App successfully generated.')
+                st.session_state['generated_app'] = app_generator.generate_app(app_name, use_case_description, update_progress)
+                progress_indication.info('App successfully generated.')
             except BadLLMResponseError:
-                st.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
+                progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
     if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:

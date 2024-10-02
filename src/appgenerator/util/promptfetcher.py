@@ -13,7 +13,7 @@ class PromptFetcher:
                 with open(f"{path}/{file}", "r") as f:
                     self.prompt_lib[os.path.splitext(file)[0]] = f.read()
 
-    def fetch(self, prompt, *args) -> None:
+    def fetch(self, prompt, *args):
         new_prompt = self.prompt_lib[prompt]
         for arg in args:
             new_prompt = new_prompt.replace(
