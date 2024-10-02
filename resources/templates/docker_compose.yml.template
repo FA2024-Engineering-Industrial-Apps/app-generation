@@ -7,3 +7,11 @@ services:
       context: ./program         # Context for the build (where your Dockerfile is)
     ports:
       - "25500:5000"       # Map port 5001 on the host to port 5000 on the container
+    networks:
+      - proxy-redirect
+
+networks:
+  proxy-redirect:
+    name: proxy-redirect
+    driver: bridge
+    external: True
