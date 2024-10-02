@@ -10,41 +10,95 @@ from logging import Logger
 from .generation_instance import GenerationInstance
 from . import config
 import os
+import re
 from .util.promptfetcher import PromptFetcher
 from .util.filecopier import FileCopier
 from .util.extractor import extract_imports_from_directory, extract_code
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Callable
 import traceback
 from . import config
 import shutil
 import logging
 from .llm_client import BadLLMResponseError, LLMClient
 from .generation_instance import GenerationInstance, AppArchitecture
+import compileall
 
 
 # Base class for LLM clients
 class AppGenerator(ABC):
+    """
+    Abstract base class for all LLM clients. Defines the interface for application generation.
+
+    @ivar logger: Logger instance to log messages.
+    @ivar llm_client: Instance of LLMClient to handle LLM interactions.
+    """
+    
     @abstractmethod
     def __init__(self, logger: Logger, llm_client: LLMClient):
+        """
+        Initializes the AppGenerator class.
+
+        @param logger: Logger instance to be used for logging.
+        @param llm_client: The LLMClient instance used to interact with the LLM.
+        """
         self.logger: Logger = logger
         self.llm_client: LLMClient = llm_client
+        
 
-    def get_requirements(self, prompt):
-        pass
+    def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
+        """
+        Generates an application based on the provided app name and use case description.
 
-    def generate_app(self, app_name: str, use_case_description: str) -> GenerationInstance:
+        This method generates a new application using the LLM based on the provided use case description
+        and application name. It also reports the progress of the generation process by invoking the
+        `progress_callback` function at each step.
+
+        @param app_name: The name of the application to generate.
+        @param use_case_description: A description of the application's use case.
+        @param progress_callback: A callback function to report progress during generation. The callback
+            receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+
+        @return: A GenerationInstance representing the generated application.
+        """
         pass
 
 
 class IEAppGenerator(AppGenerator):
+    """
+    Implementation of AppGenerator for IE applications.
+    
+    @ivar prompt_fetcher: Instance to fetch prompts for LLM interactions.
+    @ivar file_copier: Utility to copy and insert files.
+    @ivar app: The current GenerationInstance being generated.
+    """
+    
     def __init__(self, logger: logging.Logger, llm_client: LLMClient):
+        """
+        Initializes the IEAppGenerator with logger and LLM client.
+
+        @param logger: Logger instance for logging.
+        @param llm_client: The LLM client for interacting with the LLM.
+        """
         super().__init__(logger, llm_client)
         self.prompt_fetcher: PromptFetcher = PromptFetcher(config.PROMPTS_DIR, config.PROMPT_PLACEHOLDER_STRING)
         self.file_copier: FileCopier = FileCopier(config.TEMPLATE_FILES_DIR)
         self.app: GenerationInstance = None
         
+        
     @staticmethod
     def _python_code_validator(response: str) -> str:
+        """
+        Validates Python code from an LLM response.
+
+        @param response: The response string containing Python code.
+        
+        @return: Extracted and validated Python code.
+        
+        @raise BadLLMResponseError: If the LLM returns invalid Python code.
+        """
         code: str
         try:
             code = extract_code(response, "python")
@@ -52,8 +106,18 @@ class IEAppGenerator(AppGenerator):
             raise BadLLMResponseError("LLM returned code in non parsable form.")
         return code
     
+    
     @staticmethod
     def _plaintext_validator(response: str) -> str:
+        """
+        Validates plaintext (e.g., markdown) from an LLM response.
+
+        @param response: The response string containing plaintext.
+        
+        @return: Extracted and validated plaintext.
+        
+        @raise BadLLMResponseError: If the LLM returns invalid markdown code.
+        """
         code: str
         try:
             code = extract_code(response, 'markdown')
@@ -61,7 +125,13 @@ class IEAppGenerator(AppGenerator):
             raise BadLLMResponseError('LLM returned code in non parsable form.')
         return code
     
+    
     def _save_app_artifacts(self) -> None:
+        """
+        Saves the application artifacts to disk.
+        
+        This method writes the artifacts generated by the application to a specified log folder.
+        """
         if self.app:
             self._ensure_empty_folder(config.LOG_FOLDER)
             for artifact, text in self.app.artifacts.items():
@@ -71,24 +141,51 @@ class IEAppGenerator(AppGenerator):
                     encoding="utf8"
                 ) as file:
                     file.write(text)
+                    
 
     def _define_task_distribution(self) -> None:
-        architecture_description = self.llm_client.get_response(
+        """
+        Defines the task distribution for the application architecture.
+
+        Fetches a task distribution prompt and updates the application artifacts with the architecture description.
+        """
+        def validator(response: str) -> str:
+            if len(response.split(config.FRONTEND_FILE_SEPARATOR_STRING)) != 2:
+                raise BadLLMResponseError('LLM failed to return task distribution in correct format.')
+            return response
+        
+        architecture_description = self.llm_client.get_validated_response(
             self.prompt_fetcher.fetch(
                 "define_task_distribution", self.app.artifacts["use_case"]
-            )
+            ),
+            validator,
+            config.PROMPT_RERUN_LIMIT
         )
         self.app.artifacts.update({"architecture_description": architecture_description})
+        
 
     def _define_restful_api(self) -> None:
+        """
+        Defines the RESTful API based on the application's architecture description.
+
+        Fetches the API prompt and updates the application artifacts with the RESTful API definition.
+        """
         restful_api_definition = self.llm_client.get_response(
             self.prompt_fetcher.fetch(
                 "define_restful_api", self.app.artifacts["architecture_description"]
             )
         )
         self.app.artifacts.update({"restful_api_definition": restful_api_definition})
+        
 
     def _generate_web_interface(self, architecture: AppArchitecture) -> None:
+        """
+        Generates the web interface based on the specified architecture.
+
+        @param architecture: The architecture type.
+        
+        @raise BadLLMResponseError: If the LLM fails to return valid frontend code.
+        """
         def validator(response: str) -> Tuple[str, str, str]:
             self.app.artifacts.update({"web_interface_files": response})
             web_interface_files = response.split(config.FRONTEND_FILE_SEPARATOR_STRING)
@@ -169,8 +266,13 @@ class IEAppGenerator(AppGenerator):
             encoding="utf8"
         ) as file:
             file.write(script_js_text)
-
+        
     def _split_architecture_description(self) -> None:
+        """
+        Splits the architecture description into frontend and backend parts.
+
+        This method separates the frontend and backend architecture descriptions and updates the app artifacts.
+        """
         separated_architecture = self.app.artifacts["architecture_description"].split(
             config.FRONTEND_FILE_SEPARATOR_STRING
         )
@@ -180,8 +282,14 @@ class IEAppGenerator(AppGenerator):
         self.app.artifacts.update(
             {"backend_architecture_description": separated_architecture[1]}
         )
+        
 
     def _define_backend_app_interface(self) -> None:
+        """
+        Defines the backend application interface based on the RESTful API.
+
+        Fetches the backend method signatures and updates the application artifacts.
+        """
         backend_app_method_signatures = self.llm_client.get_response(
             self.prompt_fetcher.fetch(
                 "generate_backend_signatures", self.app.artifacts["restful_api_definition"]
@@ -190,8 +298,14 @@ class IEAppGenerator(AppGenerator):
         self.app.artifacts.update(
             {"backend_app_method_signatures": backend_app_method_signatures}
         )
+        
 
     def _generate_backend_http_server(self) -> None:
+        """
+        Generates the backend HTTP server code.
+
+        Fetches the server code prompt and saves the validated Python code to the application artifacts.
+        """
         backend_http_server_code = self.llm_client.get_validated_response(
             self.prompt_fetcher.fetch(
                 "generate_backend_http",
@@ -203,21 +317,29 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_http_server_code": backend_http_server_code})
-        self.app.code_artifacts.update({"server.py": backend_http_server_code})
-        self.app.file_list.append("server.py")
+        #self.app.code_artifacts.update({"server.py": backend_http_server_code})
+        #self.app.file_list.append("server.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
-                "server.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_http_server_code)
+        #with open(
+        #    os.path.join(
+        #        self.app.root_path,
+        #        config.IE_APP_FOLDER_STRUCTURE["frontend_and_backend"]["source"],
+        #        "server.py",
+        #    ),
+        #    "w",
+        #    encoding="utf8"
+        #) as file:
+        #    file.write(backend_http_server_code)
+            
 
     def _generate_backend_app(self, architecture: AppArchitecture) -> None:
+        """
+        Generates the backend application based on the architecture.
+
+        @param architecture: The application architecture type.
+        
+        @raise BadLLMResponseError: If the LLM fails to return valid backend code.
+        """
         if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
             prompt = self.prompt_fetcher.fetch(
                 "generate_backend",
@@ -226,7 +348,7 @@ class IEAppGenerator(AppGenerator):
             )
         else:
             prompt = self.prompt_fetcher.fetch(
-                "generate_backend_b",
+                "generate_backend_for_backend_only",
                 self.app.artifacts["use_case"],
             )
         backend_app_code = self.llm_client.get_validated_response(
@@ -234,21 +356,28 @@ class IEAppGenerator(AppGenerator):
         )
 
         self.app.artifacts.update({"backend_app_code": backend_app_code})
-        self.app.code_artifacts.update({"backend.py": backend_app_code})
-        self.app.file_list.append("backend.py")
+        if architecture == AppArchitecture.BACKEND_ONLY:
+            self.app.code_artifacts.update({"main.py": backend_app_code})
+            self.app.file_list.append("main.py")
 
-        with open(
-            os.path.join(
-                self.app.root_path,
-                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
-                "backend.py",
-            ),
-            "w",
-            encoding="utf8"
-        ) as file:
-            file.write(backend_app_code)
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "main.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(backend_app_code)
+
 
     def _package_backend_application(self, architecture: AppArchitecture) -> None:
+        """
+        Packages the backend application by copying necessary files.
+
+        @param architecture: The application architecture type.
+        """
         self.file_copier.copy_and_insert(
             config.MQTT_LIB_FILENAME,
             os.path.join(
@@ -257,17 +386,53 @@ class IEAppGenerator(AppGenerator):
                 "mqtt_lib.py",
             ),
         )
+        
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
+            combined_code = self.app.artifacts["backend_app_code"] + "\n\n" + self.app.artifacts["backend_http_server_code"]
+            self.app.code_artifacts.update({"main.py": combined_code})
+            self.app.file_list.append("main.py")
+            with open(
+                os.path.join(
+                    self.app.root_path,
+                    config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
+                    "main.py",
+                ),
+                "w",
+                encoding="utf8"
+            ) as file:
+                file.write(combined_code)
+        
 
     def _package_dockerfile(self, architecture: AppArchitecture) -> None:
-        dst_file = os.path.join(
+        """
+        Packages the Dockerfile for the generated application.
+
+        @param architecture: The application architecture type.
+        """
+        dst_dockerfile = os.path.join(
             self.app.root_path,
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
             "Dockerfile",
         )
-        self.file_copier.copy_and_insert("Dockerfile", dst_file, {})
+        if architecture == AppArchitecture.FRONTEND_ONLY:
+            self.file_copier.copy_and_insert(config.NGINX_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
+            dst_nginx_conf = os.path.join(
+                self.app.root_path,
+                config.IE_APP_FOLDER_STRUCTURE[architecture.value]["root"],
+                "nginx.conf",
+            )   
+            self.file_copier.copy_and_insert(config.NGINX_CONFIG_TEMPLATE_NAME, dst_nginx_conf, {})
+        else:
+            self.file_copier.copy_and_insert(config.PYTHON_DOCKERFILE_TEMPLATE_NAME, dst_dockerfile, {})
         self.app.file_list.append("Dockerfile")
+        
 
     def _generate_requirements(self, architecture: AppArchitecture) -> None:
+        """
+        Generates the requirements.txt file for the application.
+
+        @param architecture: The application architecture type.
+        """
         backend_dir = os.path.join(
             self.app.root_path,
             config.IE_APP_FOLDER_STRUCTURE[architecture.value]["source"],
@@ -293,61 +458,188 @@ class IEAppGenerator(AppGenerator):
             "requirements.txt", dst_file, {"package_list": package_list}
         )
         self.app.file_list.append("requirements.txt")
+        
 
     def _configure_docker_compose_file(self) -> None:
-        dst_file = os.path.join(self.app.root_path, "docker_compose.yml")
+        """
+        Configures the docker-compose.yml file for the generated application.
+        """
+        dst_file = os.path.join(self.app.root_path, "docker-compose.yml")
         self.file_copier.copy_and_insert(
-            "docker-compose.yml",
+            config.DOCKER_COMPOSE_TEMPLATE_NAME,
             dst_file,
-            {"image_name": self.app.name.replace(" ", "_")},
+            {"image_name": self.app.name.replace(" ", "_").lower()},
         )
         self.app.file_list.append("docker-compose.yml")
+        
 
     @staticmethod
     def _ensure_empty_folder(folder_path):
+        """
+        Ensures the given folder is empty by deleting and recreating it.
+
+        @param folder_path: Path to the folder to ensure is empty.
+        """
         if os.path.exists(folder_path):
             shutil.rmtree(folder_path)
 
         os.makedirs(folder_path, exist_ok=True)
+        
 
     def _create_app_folder_structure(self, architecture: AppArchitecture) -> None:
+        """
+        Creates the folder structure for the application.
+
+        @param architecture: The application architecture type.
+        """
         self._ensure_empty_folder(self.app.root_path)
         for folder in config.IE_APP_FOLDER_STRUCTURE[architecture.value].values():
             os.makedirs(os.path.join(self.app.root_path, folder), exist_ok=True)
+        
+            
+    def _generate_validated_backend(self, architecture: AppArchitecture, max_tries: int) -> None:
+        """
+        Generates and validates the backend for the application by attempting multiple retries.
 
-    def _generate_frontend_and_backend(self) -> None:
+        This method generates the backend application and packages it for the specified architecture.
+        It repeatedly tries to compile the generated backend code until it is syntactically correct or the
+        maximum number of attempts is reached. If the code fails to compile within the allowed attempts, 
+        an error is logged and an exception is raised.
+
+        @param architecture: The architecture type for which the backend is being generated (frontend-and-backend or backend-only).
+        @param max_tries: The maximum number of attempts to try generating syntactically correct code.
+
+        @raise BadLLMResponseError: If the LLM fails to generate syntactically correct Python code after the maximum number of attempts.
+        """
+        correct: bool = False
+        attempt:int = 0
+        
+        while not correct and attempt < max_tries:
+            self._generate_backend_app(architecture)
+            self._package_backend_application(architecture)
+            correct = compileall.compile_dir(dir=os.path.join(self.app.root_path, config.IE_APP_FOLDER_STRUCTURE[architecture.value]['source']), quiet=True)
+            if not correct: self.logger.warning('LLM generated syntactically incorrect Python code.')
+            attempt = attempt + 1
+            
+        if not correct:
+            self.logger.error('LLM failed to generate syntactically correct Python code.')
+            raise BadLLMResponseError('LLM failed to generate syntactically correct Python code.')
+
+    def _generate_frontend_and_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
+        """
+        Generates both the frontend and backend for the application.
+
+        This method sets the architecture to frontend-and-backend and triggers the generation of both.
+        If a `progress_callback` is provided, it reports the progress of the generation process.
+
+        @param progress_callback: An optional callback function to report progress during the generation process.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
+        """
+        total_llm_tasks: int = 7
+        
         self.app.architecture = AppArchitecture.FRONTEND_AND_BACKEND
         self._create_app_folder_structure(AppArchitecture.FRONTEND_AND_BACKEND)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Defining app architecture...')
         self._define_task_distribution()
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Defining RESTful API endpoints...')
         self._define_restful_api()
+        
         self._split_architecture_description()
+        
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Defining backend app interface...')
         self._define_backend_app_interface()
+        if progress_callback: progress_callback(3, total_llm_tasks, 'Generating backend HTTP server...')
         self._generate_backend_http_server()
+        if progress_callback: progress_callback(4, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_AND_BACKEND)
-        self._generate_backend_app(AppArchitecture.FRONTEND_AND_BACKEND)
-        self._package_backend_application(AppArchitecture.FRONTEND_AND_BACKEND)
+        if progress_callback: progress_callback(5, total_llm_tasks, 'Generating backend app...')
+        self._generate_validated_backend(AppArchitecture.FRONTEND_AND_BACKEND, config.PROMPT_RERUN_LIMIT)
 
         self._package_dockerfile(AppArchitecture.FRONTEND_AND_BACKEND)
+        if progress_callback: progress_callback(6, total_llm_tasks, 'Collecting app requirements...')
         self._generate_requirements(AppArchitecture.FRONTEND_AND_BACKEND)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(7, total_llm_tasks, 'Done!')
+        
 
-    def _generate_only_frontend(self) -> None:
+    def _generate_only_frontend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
+        """
+        Generates only the frontend for the application.
+
+        This method sets the architecture to frontend-only and triggers the frontend generation.
+        If a `progress_callback` is provided, it reports the progress of the frontend generation process.
+
+        @param progress_callback: An optional callback function to report progress during frontend generation.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
+        """
+        total_llm_tasks: int = 1
+        
         self.app.architecture = AppArchitecture.FRONTEND_ONLY
         self._create_app_folder_structure(AppArchitecture.FRONTEND_ONLY)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Generating web interface...')
         self._generate_web_interface(AppArchitecture.FRONTEND_ONLY)
         self._package_dockerfile(AppArchitecture.FRONTEND_ONLY)
         self._configure_docker_compose_file()
+        if progress_callback: 
+            progress_callback(1, total_llm_tasks, 'Done!')
+        
 
-    def _generate_only_backend(self) -> None:
+    def _generate_only_backend(self, progress_callback: Callable[[int, int, str], None] = None) -> None:
+        """
+        Generates only the backend for the application.
+
+        This method sets the architecture to backend-only and triggers the backend generation.
+        If a `progress_callback` is provided, it reports the progress of the backend generation process.
+
+        @param progress_callback: An optional callback function to report progress during backend generation.
+            If provided, the callback receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+            If not provided, progress reporting is skipped.
+        """
+        total_llm_tasks: int = 2
+        
         self.app.architecture = AppArchitecture.BACKEND_ONLY
         self._create_app_folder_structure(AppArchitecture.BACKEND_ONLY)
-        self._generate_backend_app(AppArchitecture.BACKEND_ONLY)
-        self._package_backend_application(AppArchitecture.BACKEND_ONLY)
+        
+        if progress_callback: progress_callback(0, total_llm_tasks, 'Generating app...')
+        self._generate_validated_backend(AppArchitecture.BACKEND_ONLY, config.PROMPT_RERUN_LIMIT)
         self._package_dockerfile(AppArchitecture.BACKEND_ONLY)
+        if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Done!')
+        
 
-    def generate_app(self, app_name: str, use_case_description: str) -> GenerationInstance:
+    def generate_app(self, app_name: str, use_case_description: str, progress_callback: Callable[[int, int, str], None] = None) -> GenerationInstance:
+        """
+        Generates an application based on the provided app name and use case description.
+
+        This method generates a new application using the LLM based on the provided use case description
+        and application name. It also reports the progress of the generation process by invoking the
+        `progress_callback` function at each step.
+
+        @param app_name: The name of the application to generate.
+        @param use_case_description: A description of the application's use case.
+        @param progress_callback: A callback function to report progress during generation. The callback
+            receives three parameters:
+            - current steps completed (int): The number of steps completed so far.
+            - total steps (int): The total number of steps in the generation process.
+            - current step name (str): A description of the current step being executed.
+
+        @return: A GenerationInstance representing the generated application.
+        """
         self.logger.info("Running IEAppGenerator pipeline...")
         self.app: GenerationInstance = GenerationInstance(app_name)
         self.app.artifacts.update({"use_case": use_case_description})
@@ -362,6 +654,38 @@ class IEAppGenerator(AppGenerator):
                 raise BadLLMResponseError('LLM response not in ["a", "b", "c"].')
             return response
 
+        def _placeholder_detector(code_artifacts: dict):
+            """Detect if there is placeholder in the code artifact.
+            Args:
+                code_artifacts: A dictionary holding filenames and code as key-value pairs.
+            Returns:
+                bool
+            """
+            keywords_list = ["TODO", "FIXME", "NOTE", "MOCK"]
+            pattern = re.compile(
+                r"#\s*(" + "|".join(keywords_list) + r")[:\-]?\s*(.*)", re.IGNORECASE
+            )
+            matches = []
+            for _, code in code_artifacts.items():
+                match = pattern.search(code)
+                if match:
+                    matches.append(match)
+            return bool(matches)
+
+        def _generate_instruction_list(self) -> None:
+            """
+            Generates list of instructions for TODOs in the generated code.
+            """
+
+            instruction_list = self.llm_client.get_response(
+                self.prompt_fetcher.fetch(
+                    "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
+                )
+            )
+            self.app.artifacts.update(
+                {"instruction_list": instruction_list}
+            )
+
         try:
             generation_tasks[
                 self.llm_client.get_validated_response(
@@ -369,11 +693,14 @@ class IEAppGenerator(AppGenerator):
                         "determine_necessary_components", use_case_description
                     ),
                     response_validator,
-                    config.PROMPT_RERUN_LIMIT
+                    config.PROMPT_RERUN_LIMIT,
                 )
                 .lower()
                 .strip()
-            ]()
+            ](progress_callback)
+            self.app.placeholder_needed = _placeholder_detector(self.app.code_artifacts)
+            if self.app.placeholder_needed:
+                _generate_instruction_list(self)
         except Exception:
             print(traceback.format_exc())
             raise

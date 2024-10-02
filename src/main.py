@@ -1,6 +1,10 @@
 import logging
+import os
+import random
+
 import streamlit as st
 import streamlit.components.v1 as compenents
+import subprocess
 
 from appgenerator.app_generator import IEAppGenerator, AppGenerator
 from appgenerator.llm_client import *
@@ -9,6 +13,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 # TODO:
 from app_previewer import *
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -19,6 +24,8 @@ logging.basicConfig(
     format="[%(asctime)s][%(levelname)s] %(message)s",
     datefmt="%m/%d/%Y %I:%M:%S %p",
 )
+
+st.set_page_config(page_title='IE App Generator')
 
 st.title("Industrial Edge Application Generator")
 st.markdown(
@@ -70,12 +77,13 @@ def refine_conversation(conversation_history):
 with st.expander('LLM Configuration'):
     # LLM Selection
     llm_sources: Dict[str, LLMClient] = {
-        'FAPS LLM': FAPSLLMClient(logger),
-        'Workstation LLM': WorkstationLLMClient(logger),
-        'Siemens LLM': SiemensLLMClient(logger),
-        'ChatGPT': OpenAILLMClient(logger)
+        'ChatGPT' : OpenAILLMClient(logger),
+        'FAPS LLM' : FAPSLLMClient(logger),
+        'Workstation LLM' : WorkstationLLMClient(logger),
+        'Siemens LLM' : SiemensLLMClient(logger)
     }
     llm_client: LLMClient = llm_sources[st.radio("Select LLM source", llm_sources.keys(), horizontal=True)]
+    st.caption('For best performance it is highly recommended to use the GPT-4o model from OpenAI.')
     llm_client.select_model(st.selectbox("Please choose an LLM Model", list(llm_client.available_models.keys())))
 
     # Input secret
@@ -101,6 +109,11 @@ else:
     use_case_description = st.text_area("Your response:", height=200, key=st.session_state.input_counter)
 
 
+# Session State
+if 'app_name' not in st.session_state:
+    st.session_state['app_name'] = "My IE App"
+if 'use_case_description' not in st.session_state:
+    st.session_state['use_case_description'] = ""
 if 'generated_app' not in st.session_state:
     st.session_state['generated_app'] = None
 
@@ -128,6 +141,26 @@ if st.button("Submit"):
                 progress_indication.error('App generation failed with the selected LLM. Please try again, or select a more powerful model.')
 
 if st.session_state['generated_app']:
-    if st.session_state['generated_app'].architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]:
-        if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654'):
-            start_preview(st.session_state['generated_app'])
+    generated_app: GenerationInstance = st.session_state['generated_app']
+    if generated_app.placeholder_needed:
+        instruction_list = generated_app.artifacts["instruction_list"]
+        st.warning("The generated code is not complete.\nPlease update the code manually or provide more details in your description.\n" + instruction_list)
+    
+    col1, col2 = st.columns(2)
+    preview_available: bool = generated_app.architecture in [AppArchitecture.FRONTEND_ONLY, AppArchitecture.FRONTEND_AND_BACKEND]
+    deploy_locally = None
+    with col1:
+        deploy_locally = st.button(label='Deploy Locally', use_container_width=preview_available)
+    with col2:
+        if preview_available:
+            if st.link_button(label='Preview App Web Interface', url='http://127.0.0.1:7654', use_container_width=True):
+                start_preview(generated_app)
+                
+    if deploy_locally:
+        st.info('Attempting to start the docker container.')
+        process = subprocess.Popen(
+                ['docker-compose', '-f', os.path.join(generated_app.root_path, 'docker-compose.yml'), 'up', '--build'],
+                stdout=subprocess.PIPE,  # Redirect stdout
+                stderr=subprocess.PIPE,  # Redirect stderr
+                text=True  # Decodes output as text rather than bytes
+            )

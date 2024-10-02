@@ -1,5 +1,5 @@
 You get a list of requirements for a python environment. These requirements are collected by searching the import of python scripts.
 Convert the list so that each entry can be installed using pip. Only output packages that are not in the standard python library.
-Just output the updated list as markdown plaintext and no more output. If the list is empty, just output the markdown structure with no text.
+Just output the updated list. Use the following format for the response: ```markdown <requirements>```.
 Here is the list:
 [%text%]
