@@ -583,16 +583,19 @@ class IEAppGenerator(AppGenerator):
             return bool(matches)
     
 
-    def _generate_instruction_list(self) -> None:
+    def _generate_instruction_list(self, architecture: AppArchitecture) -> None:
         """
         Generates list of instructions for TODOs in the generated code.
         """
-
-        instruction_list = self.llm_client.get_response(
-            self.prompt_fetcher.fetch(
+        if architecture == AppArchitecture.FRONTEND_AND_BACKEND:
+            prompt = self.prompt_fetcher.fetch(
                 "generate_instruction_list", self.app.artifacts["backend_architecture_description"], self.app.code_artifacts["main.py"]
             )
-        )
+        else:
+            prompt = self.prompt_fetcher.fetch(
+                "generate_instruction_list", self.app.artifacts["use_case"], self.app.code_artifacts["main.py"]
+            )
+        instruction_list = self.llm_client.get_response(prompt)
         self.app.artifacts.update(
             {"instruction_list": instruction_list}
         )
@@ -641,7 +644,7 @@ class IEAppGenerator(AppGenerator):
         if progress_callback:  progress_callback(7, total_llm_tasks, 'Writing documentation...')
         self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
         if self.app.placeholder_needed:
-            self._generate_instruction_list()
+            self._generate_instruction_list(AppArchitecture.FRONTEND_AND_BACKEND)
 
         self._generate_documentation(AppArchitecture.FRONTEND_AND_BACKEND)
         if progress_callback: progress_callback(8, total_llm_tasks, 'Done!')
@@ -700,9 +703,11 @@ class IEAppGenerator(AppGenerator):
         if progress_callback: progress_callback(1, total_llm_tasks, 'Collecting requirements...')
         self._generate_requirements(AppArchitecture.BACKEND_ONLY)
         self._configure_docker_compose_file()
-        if progress_callback: progress_callback(1, total_llm_tasks, 'Writing documentation...')
+        if progress_callback: progress_callback(2, total_llm_tasks, 'Writing documentation...')
+        self.app.placeholder_needed = self._placeholder_detector(self.app.code_artifacts)
+        if self.app.placeholder_needed:
+            self._generate_instruction_list(AppArchitecture.BACKEND_ONLY)
         self._generate_documentation(AppArchitecture.BACKEND_ONLY)
-        
         if progress_callback: progress_callback(3, total_llm_tasks, 'Done!')
         
 
