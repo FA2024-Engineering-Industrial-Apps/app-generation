@@ -105,7 +105,10 @@ def extract_pdf_from_markdown(md_content: str, output_path: str) -> None:
     # Combine styles and HTML body
     html_content = f"""
     <html>
-    <head>{styles}</head>
+    <head>
+        <meta charset="UTF-8">
+        {styles}
+    </head>
     <body>{html_body}</body>
     </html>
     """

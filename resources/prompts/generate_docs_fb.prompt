@@ -36,7 +36,9 @@ Mention any tools or platforms required for installation, such as Docker, and pr
 
 3. App Architecture
 Folder Structure:
-Convert the folder structure represented as a dictionary into a hierarchical tree format, display the project's folder structure and provide a brief description of each major directory and its purpose.
+Convert the folder structure represented as a dictionary into a folder tree structure using the `tree` command style, formatted for inclusion in a Markdown code block. Use appropriate symbols like `|-` and `|` to represent the hierarchy. Avoid using comment in this code block.
+
+Put a brief description of each major directory and its purpose into a new list block.
 
 Component Interaction:
 Explain how different modules and components interact within the application, referencing key files like server.py, backend.py, and mqtt_lib.py.
