@@ -43,7 +43,7 @@ class MQTTClient:
 Make sure to import MQTTMessage from paho.mqtt.client. This should be the only item you import from the paho library.
 
 Your task is to write the backend according to the architecture description and implement the functions that are called from the endpoints. Make sure the backend is not modelled by a class.
-Provide a "init" function where you initialize everything. The init function should have no parameters. Unless otherwise specified, use "ie-databus" as a broker address, 1883 as a brokerport and "edge" both for username and password in the mqtt client.
+Provide a "init" function where you initialize everything. The init function should have no parameters.
 The backend should not implement a flask server. The backend should also not have a main function.
 
 Here are the functions according to the endpoints:
@@ -55,3 +55,4 @@ Stay closely to the description of the architecture. Here is the backend archite
 Only output the code of the backend with no further recommendations. Return the code snippet within a markdown code block.
 
 If any details are unclear, insert a placeholder comment of "# TODO:", e.g. # TODO: specify database credentials.
+Unless otherwise specified, use "ie-databus" as a broker address, 1883 as a brokerport and "edge" both for username and password in the mqtt client. These should still have a TODO comment that they should be changed accordingly.
